@@ -5,7 +5,7 @@ from aiogram.types import Message
 
 from db.database import Database
 
-from keyboards.defaults import user_panel
+from keyboards.default import user_panel
 from keyboards.setup_ui import set_bot_commands
 from utils.phrases import Phrases
 

@@ -5,7 +5,7 @@ from aiogram.types import Message
 from db.database import Database
 
 from filters.is_admin import IsAdmin
-from keyboards.admins import get_admin_panel
+from keyboards.admin import get_admin_panel
 from utils.phrases import AdminPhrases
 
 router = Router()

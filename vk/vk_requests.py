@@ -1,85 +1,115 @@
+import logging
 import aiohttp
+
+from schemas.vk_group import VkGroupSchema
+
+
+logger = logging.getLogger(__name__)
 
 
 class VkRequests:
     def __init__(
         self,
-        group_domain: str,
-        vk_token: str,
-        ver: str,
+        group_schemas: list[VkGroupSchema],
+        api_vk_token: str,
+        api_ver: str,
         proxy: str = None,
-        check_time: int = 300,
-        post_offset: int = 1,
-        should_parse_post_title: bool = False,
     ):
-        self.check_time = check_time
-        self.post_offset = post_offset
-        self.should_parse_post_title = should_parse_post_title
         self.proxy = proxy
 
-        self.last_post_date: str
+        self.groups = group_schemas
 
         self.url = "https://api.vk.com/method/wall.get"
         self.params = {
-            "access_token": vk_token,
-            "v": ver,
-            "domain": group_domain,
+            "access_token": api_vk_token,
+            "v": api_ver,
             "count": 1,
-            "offset": post_offset,
         }
 
-    async def check_last_post(self) -> bool:
+        self.last_post_date: str = ""
+
+    async def check_last_post(self) -> dict[str, VkGroupSchema]:
+        # чтобы одновременно чекать 2 группы нужно запускать эту хуйню в двух потоках
+        # либо создавать 2 обьетка
+        # мне кажется, я хз
+
+        result = {}
+
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get(
-                    self.url, params=self.params, proxy=self.proxy
-                ) as response:
-                    response_json = await response.json()
-                    file_type = response_json["response"]["items"][-1]["type"]
+                for group in self.groups:
+                    self.params["domain"] = group.domain
+                    self.params["offset"] = group.start_post_offset
 
-                    if file_type == "post":
-                        self._parse_photos(response_json)
-                        return True
+                    logger.info("- - - - - - - - - - - - - - - - - - - - - - -")
+                    logger.info("STARTING FETCH POSTS FROM %s", group)
 
-                    else:
-                        self._parse_doc(response_json)
+                    async with session.get(
+                        self.url, params=self.params, proxy=self.proxy
+                    ) as response:
+                        response_json = await response.json()
 
+                        file_type = response_json["response"]["items"][-1][
+                            "attachments"
+                        ][0]["type"]
+                        file_date = response_json["response"]["items"][0]["date"]
+
+                        if self.last_post_date == file_date:
+                            # File Is Already Parsed
+                            continue
+
+                        if file_type == "photo" and file_type == group.return_file_type:
+                            logger.info("PHOTO FOUND; PARSING...")
+
+                            photo_urls = self._parse_photos(response_json)
+
+                            self.last_post_date = file_date
+
+                            result[group.group_name_shortcut] = group.model_copy(
+                                update={
+                                    "files_url": photo_urls,
+                                    "photo_date": file_date,
+                                }
+                            )
+
+                        elif file_type == "doc" and file_type == group.return_file_type:
+                            logger.info("DOCUMENT FOUND; PARSING...")
+
+                            doc_url, doc_title = self._parse_doc(response_json)
+
+                            self.last_post_date = file_date
+
+                            result[group.group_name_shortcut] = group.model_copy(
+                                update={
+                                    "files_url": doc_url,
+                                    "doc_title": doc_title,
+                                    "doc_date": file_date,
+                                }
+                            )
+
+                        # else:
+                        #     logger.info("NO POSTS FOUND in GROUP %s", group)
             except aiohttp.ClientError as e:
-                print(f"Ошибка соединения: {e}")
+                logger.error("Ошибка соединения aiohttp.ClientError: %s", e)
                 return None
             except Exception as e:
-                print(f"Неожиданная ошибка: {e}")
+                logger.error("Неожаданная ошибка: %s", e)
                 return None
 
-        return False
+        return result
 
-    async def _parse_photos(self, response_json) -> list:
+    def _parse_photos(self, response_json) -> list[str]:
         photo_urls = [
             att["photo"]["orig_photo"]["url"]
             for att in response_json["response"]["items"][-1]["attachments"]
         ]
 
-        photo_date = response_json["response"]["items"][-1]["date"]
-        return photo_urls, photo_date
+        return photo_urls
 
-    async def _parse_doc(self, response_json) -> dict:
-        """
-        Отдельно парсить доки
-
-        :return:
-        doc_file  - file ссылкой на документ,
-        doc_text  - текст поста,
-        doc_date  - дата поста,
-        """
-
+    def _parse_doc(self, response_json) -> list[str]:
         doc_file = response_json["response"]["items"][-1]["attachments"][-1]["doc"][
             "url"
         ]
         doc_title = response_json["response"]["items"][-1]["text"]
-        doc_date = response_json["response"]["items"][-1]["date"]
 
-        return {
-            "doc": doc_file,
-            "doc_title": doc_title,
-            "doc_date": doc_date,
-        }
+        return doc_file, doc_title

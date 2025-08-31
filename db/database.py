@@ -37,11 +37,7 @@ class Database:
         self, user_id: int, username: str, name: str, group: str
     ) -> User:
         try:
-            user = await self.get_user(user_id)
-            if user:
-                return user
-
-            user = User(tg_id=user_id, username=username, name=name, group=group)
+            user = User(tg_id=user_id, username=username, group=group)
             self.session.add(user)
             await self.session.commit()
             return user

@@ -1,7 +1,7 @@
 class Phrases:
     @staticmethod
     def first_greeting() -> str:
-        return """здарова\n\nнужно зарегистрироваться, <b>/group (номер группы)</b>"""
+        return """здарова\n\nнужно зарегистрироваться, <b>/reg (нпк)</b>"""
 
     @staticmethod
     def ask_ai() -> str:
@@ -55,6 +55,14 @@ class AdminPhrases:
     check_npk_command: str = "Проверить NPK"
     check_knn_command: str = "Проверить KNN"
     load_schedule_command: str = "Загрузить вручную"
+
+    # - - -
+
+    approve_schdule_command: str = "✅ Подтвердить"
+    reject_schdule_command: str = "❌ Отклонить"
+    edit_schdule_command: str = "✏️ Редактировать"
+
+    # - - -
 
 
 class ErrorPhrases:

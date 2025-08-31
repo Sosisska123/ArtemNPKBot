@@ -10,8 +10,8 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
-    tg_id = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tg_id = mapped_column(BigInteger, unique=True)
 
     username: Mapped[str] = mapped_column(unique=True)
     notification_state: Mapped[bool] = mapped_column(default=True)

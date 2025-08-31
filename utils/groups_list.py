@@ -1,1 +1,0 @@
-avaible_groups = ["нпк"]

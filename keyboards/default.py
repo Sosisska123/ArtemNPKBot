@@ -45,3 +45,32 @@ def post_keyboard() -> InlineKeyboardMarkup:
             ]
         ]
     )
+
+
+# def approve_schedule(
+#     *buttons: HomeworkData, action: Optional[str] = None
+# ) -> InlineKeyboardMarkup:
+#     builder = InlineKeyboardBuilder()
+
+#     for hw in buttons:
+#         builder.button(
+#             text=hw.lesson_name.capitalize()
+#             if not hw.is_pinned
+#             else f"{hw.lesson_name.capitalize()} [📌]",
+#             callback_data=HomeworkCallbackData(
+#                 action=action or "", lesson_name=hw.lesson_name, sharaga_type=hw.sharaga
+#             ).pack(),
+#         )
+
+#     return builder.adjust(2, repeat=True).as_markup(resize_keyboard=True)
+
+
+# def make_reply_keyboard(*buttons: str, sizes: tuple[int] = (2,)) -> ReplyKeyboardMarkup:
+#     keyboard = ReplyKeyboardBuilder()
+
+#     for text in buttons:
+#         keyboard.add(KeyboardButton(text=text))
+
+#     return keyboard.adjust(*sizes).as_markup(
+#         resize_keyboard=True, one_time_keyboard=True
+#     )

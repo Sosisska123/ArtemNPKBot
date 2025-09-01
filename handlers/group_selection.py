@@ -29,6 +29,9 @@ async def select_group(message: Message, command: CommandObject, db: Database) -
                 command.args.lower(),
             )
             await message.answer(Phrases.success(), reply_markup=user_panel())
+
+            log.info("User %s registered", message.from_user.username)
+
         else:
             await message.answer(ErrorPhrases.group_not_found())
             return

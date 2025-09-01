@@ -1,5 +1,4 @@
-import datetime
-from sqlalchemy import BigInteger, String
+from sqlalchemy import BigInteger
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -16,17 +15,6 @@ class User(Base):
     username: Mapped[str] = mapped_column(unique=True)
     notification_state: Mapped[bool] = mapped_column(default=True)
     group: Mapped[int] = mapped_column(nullable=True)
-
-
-class Schedule(Base):
-    __tablename__ = "schedules"
-
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    date: Mapped[datetime.datetime] = mapped_column()
-    url: Mapped[str] = mapped_column(String(500))
-
-    group: Mapped[str] = mapped_column(nullable=True)
-    schedule_type: Mapped[str]
 
 
 # class Homework(Base):

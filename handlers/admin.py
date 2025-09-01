@@ -21,3 +21,28 @@ async def admin_panel_command(message: Message, db: Database) -> None:
         ),
         reply_markup=get_admin_panel(),
     )
+
+
+@router.message(Command("add_schedule"))
+async def admin_add_schedule_command(message: Message) -> None:
+    pass
+
+
+@router.message(Command("add_default_ring_schedule"))
+async def admin_add_default_ring_schedule_command(message: Message) -> None:
+    pass
+
+
+@router.message(Command("add_ring_schedule"))
+async def admin_add_ring_schedule_command(message: Message) -> None:
+    pass
+
+
+@router.message(Command("get_var_list"))
+async def admin_get_var_list_command(message: Message) -> None:
+    pass
+
+
+@router.message(Command("set_var"))
+async def admin_set_var_command(message: Message) -> None:
+    pass

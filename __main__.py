@@ -3,23 +3,24 @@ import logging
 
 from aiogram import Dispatcher
 
-
 from handlers.default import router as default_router
 from handlers.group_selection import router as group_selection_router
 from handlers.admin import router as admin_router
 
-from db.database import Database, init_db, engine
+from db.database import init_db
+from utils.db_dependency import DBDependency
 
 from middlewares.throttling import ThrottlingMiddleware
 
 from vk import vk_schedule as vk_schedule
 from vk.schemas.vk_group import KNNVkGroup, NPKVkGroup
-
-from sqlalchemy.ext.asyncio import async_sessionmaker
-
 from vk.vk_requests import VkRequests
+
 from bot_file import bot
 from settings import config
+
+from tests.handlers_tests import router as test_router
+
 
 dp = Dispatcher()
 
@@ -32,13 +33,18 @@ logging.basicConfig(
 
 
 async def start() -> None:
-    async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
-    await init_db()
+    # Initialize database dependency
+    db_dependency = DBDependency()
+    async_session = db_dependency.db_session
+
+    # Initialize database
+    await init_db(db_dependency._engine)
 
     dp.include_routers(
         default_router,
         group_selection_router,
         admin_router,
+        test_router,
     )
 
     dp.message.middleware(
@@ -49,8 +55,6 @@ async def start() -> None:
     )
 
     # снизу хуита уже
-
-    db = Database(session=async_session)
 
     npk_group = NPKVkGroup(
         domain=config.vk.group_domains[0],
@@ -71,7 +75,7 @@ async def start() -> None:
         api_ver=config.vk.version,
     )
 
-    vk_schedule.create_scheduler(vk_requests, db)
+    # vk_schedule.create_scheduler(vk_requests, db)
 
     await bot.delete_webhook(True)
     await dp.start_polling(bot)

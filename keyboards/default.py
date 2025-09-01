@@ -2,8 +2,8 @@ from aiogram.types import (
     KeyboardButton,
     ReplyKeyboardMarkup,
     InlineKeyboardMarkup,
-    InlineKeyboardButton,
 )
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from utils.phrases import ButtonPhrases
 
@@ -11,8 +11,8 @@ from utils.phrases import ButtonPhrases
 def user_panel() -> ReplyKeyboardMarkup:
     buttons = [
         [
-            KeyboardButton(text=ButtonPhrases.today_command),
-            KeyboardButton(text=ButtonPhrases.rings_command),
+            KeyboardButton(text=ButtonPhrases.today_command_panel),
+            KeyboardButton(text=ButtonPhrases.rings_command_panel),
         ]
     ]
 
@@ -21,30 +21,19 @@ def user_panel() -> ReplyKeyboardMarkup:
     )
 
 
-def schedule_button() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    text=ButtonPhrases.rings_command,
-                    callback_data=ButtonPhrases.rings_command,
-                )
-            ]
-        ]
-    )
-
-
 def post_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    text=ButtonPhrases.turn_off_notifications_command,
-                    callback_data=ButtonPhrases.turn_off_notifications_command,
-                )
-            ]
-        ]
+    builder = InlineKeyboardBuilder()
+
+    builder.button(
+        text=ButtonPhrases.turn_off_notifications_command,
+        callback_data=ButtonPhrases.turn_off_notifications_command,
     )
+
+    builder.button(
+        text=ButtonPhrases.rings_command_panel,
+        callback_data=ButtonPhrases.rings_command_panel,
+    )
+    return builder.adjust(2).as_markup(resize_keyboard=True)
 
 
 # def approve_schedule(

@@ -49,7 +49,12 @@ async def post_schedule_in_group(
     pass
 
 
-async def send_to_admin(bot: Bot, group: str, file_type: str, files: list[str] | str):
+# admin - - -
+
+
+async def send_new_post_to_admin(
+    bot: Bot, group: str, file_type: str, files: list[str] | str
+):
     if isinstance(files, str):
         files = [files]
 
@@ -76,6 +81,7 @@ async def send_to_admin(bot: Bot, group: str, file_type: str, files: list[str] |
 
         if file_type == "doc":
             message = await bot.send_document(
+                caption=group,
                 chat_id=admin,
                 document=files[0],
             )
@@ -87,6 +93,7 @@ async def send_to_admin(bot: Bot, group: str, file_type: str, files: list[str] |
             )
         elif file_type == "photo":
             message = await bot.send_photo(
+                caption=group,
                 chat_id=admin,
                 photo=files[0],
             )
@@ -96,3 +103,8 @@ async def send_to_admin(bot: Bot, group: str, file_type: str, files: list[str] |
                 message_id=msg_id,
                 reply_markup=manage_new_schedule(msg_id),
             )
+
+
+async def send_report_to_admin(bot: Bot, report: str):
+    for admin in config.admins:
+        await bot.send_message(chat_id=admin, text=f"⚠️ {report}")

@@ -1,10 +1,8 @@
 import asyncio
-import datetime
 import logging
 
 from aiogram import Dispatcher
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from handlers.default import router as default_router
 from handlers.group_selection import router as group_selection_router
@@ -14,17 +12,16 @@ from db.database import Database, init_db, engine
 
 from middlewares.throttling import ThrottlingMiddleware
 
-from schemas.vk_group import KNNVkGroup, NPKVkGroup
+from vk import vk_schedule as vk_schedule
+from vk.schemas.vk_group import KNNVkGroup, NPKVkGroup
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from utils.mailing_handler import send_to_admin
 from vk.vk_requests import VkRequests
 from bot_file import bot
 from settings import config
 
 dp = Dispatcher()
-scheduler = AsyncIOScheduler()
 
 
 logging.basicConfig(
@@ -74,76 +71,10 @@ async def start() -> None:
         api_ver=config.vk.version,
     )
 
-    # Schedule the daily job at 8:00 AM to start the parsing scheduler
-    scheduler.add_job(
-        func=start_parsing_scheduler,
-        trigger="cron",
-        timezone=datetime.timezone(datetime.timedelta(hours=3)),
-        hour=9,
-        next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=10),
-        id="daily_scheduler",
-        args=[vk_requests, db],
-        max_instances=1,
-        coalesce=True,
-    )
-
-    scheduler.start()
+    vk_schedule.create_scheduler(vk_requests, db)
 
     await bot.delete_webhook(True)
     await dp.start_polling(bot)
-
-
-async def start_parsing_scheduler(vk: VkRequests, db: Database):
-    """скедулер который запускает скедулер который парсит вквквк every 5 minets"""
-
-    if scheduler.get_job("parsing_job"):
-        logging.info(scheduler.get_job("parsing_job"))
-        scheduler.remove_job("parsing_job", jobstore=None)
-
-    scheduler.add_job(
-        func=parse_job,
-        trigger="interval",
-        minutes=5,
-        id="parsing_job",
-        next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=10),
-        args=[vk, db],
-        max_instances=1,
-        coalesce=True,
-    )
-
-    scheduler.print_jobs()
-
-    logging.info("Parsing scheduler started at %s AM", datetime.datetime.now())
-
-
-async def parse_job(vk: VkRequests, db: Database):
-    """он уже парсит вк и стопает када чето получает"""
-    try:
-        result = await vk.check_last_post()
-
-        if result and len(result) > 0:
-            # stop🫸
-            try:
-                scheduler.remove_job("parsing_job", jobstore=None)
-
-                for group in result.values():
-                    await send_to_admin(
-                        bot=bot,
-                        group=group.group_name_shortcut,
-                        file_type=group.return_file_type,
-                        files=group.files_url,
-                    )
-
-                scheduler.print_jobs()
-
-            except Exception as e:
-                logging.exception("%s | Job might already be removed", e)
-
-            # Process the result further if needed
-            logging.info("PARSING SEXSESSFULL | RESULT: %s", len(result))
-
-    except Exception as e:
-        logging.error(f"Error in parse_job: {e}", exc_info=True)
 
 
 if __name__ == "__main__":

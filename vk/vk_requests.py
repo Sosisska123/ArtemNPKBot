@@ -1,7 +1,7 @@
 import logging
 import aiohttp
 
-from schemas.vk_group import VkGroupSchema
+from .schemas.vk_group import VkGroupSchema
 
 
 logger = logging.getLogger(__name__)
@@ -56,6 +56,11 @@ class VkRequests:
 
                         if self.last_post_date == file_date:
                             # File Is Already Parsed
+                            continue
+
+                        elif self.last_post_date == "":
+                            # now its last post
+                            self.last_post_date = file_date
                             continue
 
                         if file_type == "photo" and file_type == group.return_file_type:

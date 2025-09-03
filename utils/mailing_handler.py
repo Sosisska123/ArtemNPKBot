@@ -5,7 +5,7 @@ from aiogram.utils.media_group import MediaGroupBuilder
 
 from db.database import Database
 from keyboards.admin import manage_new_schedule
-from keyboards.default import post_keyboard
+from keyboards.default import under_post_keyboard
 
 from models.user import User
 from settings import config
@@ -104,7 +104,7 @@ async def post_schedule_in_group(
         users=users,
         file_type=file_type,
         files=files,
-        reply_keyboard=post_keyboard(),
+        reply_keyboard=under_post_keyboard(),
     )
 
 

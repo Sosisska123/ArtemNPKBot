@@ -3,9 +3,15 @@ import logging
 
 from aiogram import Dispatcher
 
-from handlers.default import router as default_router
 from handlers.group_selection import router as group_selection_router
+from handlers.schedules import router as schedules_router
+from handlers.defaults import router as default_router
 from handlers.admin import router as admin_router
+
+from callbacks.schedules import router as schedules_callback_router
+from callbacks.defaults import router as default_callback_router
+from callbacks.admin import router as admin_callback_router
+
 
 from db.database import init_db
 from utils.db_dependency import DBDependency
@@ -45,6 +51,10 @@ async def start() -> None:
         group_selection_router,
         admin_router,
         test_router,
+        schedules_router,
+        default_callback_router,
+        admin_callback_router,
+        schedules_callback_router,
     )
 
     dp.message.middleware(
@@ -53,8 +63,6 @@ async def start() -> None:
     dp.callback_query.middleware(
         ThrottlingMiddleware(session=async_session, ttl=config.ttl_default)
     )
-
-    # снизу хуита уже
 
     npk_group = NPKVkGroup(
         domain=config.vk.group_domains[0],

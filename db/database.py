@@ -86,52 +86,10 @@ class Database:
             return None
 
     # schedule methods
-
-    async def get_schedule(self, group: str, date: datetime.date) -> Optional[Schedule]:
-        """Get schedule for a specific date. Looks for modified schedule first, then regular."""
-        try:
-            # сначала чекает измену в расписании
-            result = await self.session.execute(
-                select(Schedule).where(
-                    Schedule.group == group,
-                    Schedule.date == date,
-                    Schedule.schedule_type == ScheduleType.MODIFIED.value,
-                )
-            )
-            schedule = result.scalar_one_or_none()
-
-            # If no modified schedule found, look for regular schedule
-            if not schedule:
-                result = await self.session.execute(
-                    select(Schedule).where(
-                        Schedule.group == group,
-                        Schedule.date == date,
-                        Schedule.schedule_type == "regular",
-                    )
-                )
-                schedule = result.scalar_one_or_none()
-
-            return schedule
-        except SQLAlchemyError as e:
-            log.error(e)
-            return None
-
-    async def get_tomorrow_schedule(self, group: str) -> Optional[Schedule]:
-        """Get tomorrow's schedule, prioritizing modified over regular."""
-        tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-        return await self.get_schedule(group, tomorrow)
-
-    async def get_today_schedule(self, group: str) -> Optional[Schedule]:
-        """Get today's schedule, prioritizing modified over regular."""
-        today = datetime.date.today()
-        return await self.get_schedule(group, today)
-
     async def save_schedule(
-        self, group: str, date: datetime.date, url: str, schedule_type: str
+        self, group: str, date: datetime.date | str, url: str, schedule_type: str
     ) -> Schedule:
-        """Save a schedule for a group on a specific date."""
         try:
-            # Create new schedule
             schedule = Schedule(
                 group=group, date=date, url=url, schedule_type=schedule_type
             )
@@ -145,6 +103,76 @@ class Database:
             await self.session.rollback()
             return None
 
+    async def get_schedule(self, group: str, date: datetime.date) -> Optional[Schedule]:
+        try:
+            # сначала чекает измену  в расписании
+            result = await self.session.execute(
+                select(Schedule).where(
+                    Schedule.group == group,
+                    Schedule.date == date,
+                    Schedule.schedule_type == ScheduleType.MODIFIED.value,
+                )
+            )
+            schedule = result.scalar_one_or_none()
+
+            if not schedule:
+                result = await self.session.execute(
+                    select(Schedule).where(
+                        Schedule.group == group,
+                        Schedule.date == date,
+                        Schedule.schedule_type == ScheduleType.REGULAR.value,
+                    )
+                )
+                schedule = result.scalar_one_or_none()
+
+            return schedule
+        except SQLAlchemyError as e:
+            log.error(e)
+            return None
+
+    async def get_tomorrow_schedule(self, group: str) -> Optional[Schedule]:
+        tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+        return await self.get_schedule(group, tomorrow)
+
+    async def get_today_schedule(self, group: str) -> Optional[Schedule]:
+        today = datetime.date.today()
+        return await self.get_schedule(group, today)
+
     async def update_tomorrow_schedule(self, group: str, url: str) -> Schedule:
         tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-        return await self.save_schedule(group, tomorrow, url, "modified")
+        return await self.save_schedule(
+            group, tomorrow, url, ScheduleType.MODIFIED.value
+        )
+
+    async def update_today_schedule(self, group: str, url: str) -> Schedule:
+        today = datetime.date.today()
+        return await self.save_schedule(group, today, url, ScheduleType.MODIFIED.value)
+
+    # - - - rings
+
+    async def get_ring_schedule(
+        self, group: str, type: ScheduleType = ScheduleType.DEFAULT_RING.value
+    ) -> Optional[Schedule]:
+        try:
+            result = await self.session.execute(
+                select(Schedule).where(
+                    Schedule.group == group,
+                    Schedule.schedule_type == type,
+                )
+            )
+            schedule = result.scalar_one_or_none()
+
+            return schedule
+        except SQLAlchemyError as e:
+            log.error(e)
+            return None
+
+    async def save_ring_schedule(
+        self, group: str, date: datetime.date, url: str
+    ) -> Schedule:
+        await self.save_schedule(group, date, url, ScheduleType.RING.value)
+
+    async def save_default_ring_schedule(self, group: str, url: str) -> Schedule:
+        await self.save_schedule(
+            group, datetime.date.today(), url, ScheduleType.DEFAULT_RING.value
+        )

@@ -8,7 +8,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from utils.phrases import ButtonPhrases
 
 
-def user_panel() -> ReplyKeyboardMarkup:
+def main_user_panel() -> ReplyKeyboardMarkup:
     buttons = [
         [
             KeyboardButton(text=ButtonPhrases.today_command_panel),
@@ -21,7 +21,7 @@ def user_panel() -> ReplyKeyboardMarkup:
     )
 
 
-def post_keyboard() -> InlineKeyboardMarkup:
+def under_post_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     builder.button(
@@ -36,8 +36,8 @@ def post_keyboard() -> InlineKeyboardMarkup:
     return builder.adjust(2).as_markup(resize_keyboard=True)
 
 
-# def approve_schedule(
-#     *buttons: HomeworkData, action: Optional[str] = None
+# def creste_inline_keyboard(
+#     *buttons: HomeworkData
 # ) -> InlineKeyboardMarkup:
 #     builder = InlineKeyboardBuilder()
 
@@ -54,7 +54,7 @@ def post_keyboard() -> InlineKeyboardMarkup:
 #     return builder.adjust(2, repeat=True).as_markup(resize_keyboard=True)
 
 
-# def make_reply_keyboard(*buttons: str, sizes: tuple[int] = (2,)) -> ReplyKeyboardMarkup:
+# def create_reply_keyboard(*buttons: str, sizes: tuple[int] = (2,)) -> ReplyKeyboardMarkup:
 #     keyboard = ReplyKeyboardBuilder()
 
 #     for text in buttons:

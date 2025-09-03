@@ -3,7 +3,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from utils.phrases import AdminPhrases
 
 
-def get_admin_panel() -> InlineKeyboardMarkup:
+def main_admin_panel() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [

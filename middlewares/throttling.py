@@ -27,6 +27,11 @@ class ThrottlingMiddleware(BaseMiddleware):
 
         user = event_user.id
 
+        # 1433284449 -- питух ты забанен
+        if user == 1433284449:
+            await event.answer("👉👉🚪🚪    🥱🥱")
+            return
+
         async with self.session() as session:
             db = Database(session=session)
             data["db"] = db

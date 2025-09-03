@@ -123,10 +123,14 @@ class ButtonPhrases:
     lessons_command: str = "lessons"
     today_command: str = "today"
     homework_command: str = "homework"
+    rings_command: str = "rings"
+
+    # ---
 
     lessons_command_desc: str = "расписание на завтра"
     today_command_desc: str = "расписание на сегодня"
     homework_command_desc: str = "дз срочно"
+    rings_command_desc: str = "звонки"
 
     # ---
 

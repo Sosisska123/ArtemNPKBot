@@ -19,13 +19,7 @@ class Schedule(Base):
     group: Mapped[str] = mapped_column(String(10))
     url: Mapped[str] = mapped_column(String(500))
     date: Mapped[datetime.date] = mapped_column()
-    schedule_type: Mapped[str] = mapped_column(String(20), default=ScheduleType.REGULAR)
+    schedule_type: Mapped[str] = mapped_column(
+        String(20), default=ScheduleType.REGULAR.value
+    )
     file_type: Mapped[str] = mapped_column(String(10), default="photo")
-
-    def __repr__(self) -> str:
-        return f"Schedule(id={self.id}, group='{self.group}', date={self.date}, type='{self.schedule_type}')"
-
-
-print(ScheduleType.REGULAR)
-print(ScheduleType.REGULAR.value)
-print(ScheduleType.REGULAR.name)

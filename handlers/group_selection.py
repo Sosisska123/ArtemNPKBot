@@ -4,7 +4,7 @@ from aiogram.filters import Command, CommandObject
 
 from aiogram.types import Message
 
-from keyboards.default import user_panel
+from keyboards.default import main_user_panel
 from utils.phrases import ErrorPhrases, Phrases
 
 from db.database import Database
@@ -21,14 +21,17 @@ async def select_group(message: Message, command: CommandObject, db: Database) -
         return
 
     try:
-        if command.args.lower() in ["нпк", "кнн"]:
+        if command.args.lower() in [
+            "нпк",
+            "кнн",
+        ]:  # todo заменить на реал группы. когда нибудь
             await db.create_user(
                 message.from_user.id,
                 message.from_user.username,
                 message.from_user.first_name,
                 command.args.lower(),
             )
-            await message.answer(Phrases.success(), reply_markup=user_panel())
+            await message.answer(Phrases.success(), reply_markup=main_user_panel())
 
             log.info("User %s registered", message.from_user.username)
 

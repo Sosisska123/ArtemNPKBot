@@ -70,11 +70,19 @@ class AdminPhrases:
     ) -> str:
         return f"[-] -- Admin Panel -- [-]\n\n[сайт](https://pythonanywhere.com)\n\nЛошков - {users_count}\n\n**Последняя проверка NPK** - {last_check_time_npk}\n\n**Последняя проверка KNN** - {last_check_time_knn}"
 
+    @staticmethod
+    def load_schedule_text():
+        return "send photo/document then"
+
+    @staticmethod
+    def comands_list():
+        return "/load_schedule [нпк/кнн] [file/url] - загрузить расписание\n/add_ring_schedule [нпк/кнн] [file/url] [reg/def] - добавить расписание звонков. reg - только на завтра, def - дефолтное\n\n/var_list - список переменных бота\n/set_var [var] [value] - изменить переменную бота\n/clear_jobs - очистить планировщик\n/list - список команд\n/add_user [id] [group] - добавить пользователя"
+
     # ---
 
     check_npk_command: str = "Проверить NPK"
     check_knn_command: str = "Проверить KNN"
-    load_schedule_command: str = "Загрузить вручную"
+    load_schedule_command: str = "Загрузить расписание"
 
     # - - -
 
@@ -117,6 +125,10 @@ class ErrorPhrases:
     @staticmethod
     def flood_warning(time: int) -> str:
         return f"⚠️ Не так быстро! Подождите немного перед следующим действием. <code>{time}</code> сек"
+
+    @staticmethod
+    def wrong_file_type() -> str:
+        return "wrong file type"
 
 
 class ButtonPhrases:

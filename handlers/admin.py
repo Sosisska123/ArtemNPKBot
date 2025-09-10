@@ -1,43 +1,162 @@
 import logging
-from aiogram import Router
+
+from aiogram import F, Router
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
 
 from db.database import Database
 
 from filters.is_admin import IsAdmin
 from keyboards.admin import main_admin_panel
+
+from models.schedule import ScheduleType
+from utils.date_utils import get_tomorrow_date
+from utils.mailing_handler import send_new_post_to_admin
 from utils.phrases import AdminPhrases, ErrorPhrases
+from utils.states import LoadScheduleFsm
+
+from vk.vk_schedule import stop_parsing_jobs
+
+from services.schedule import save_ring_schedule
+
 
 router = Router()
 log = logging.getLogger(__name__)
 
 
 @router.message(Command("admin"), IsAdmin())
-async def admin_panel_command(message: Message, db: Database) -> None:
+async def admin_panel_command(message: Message) -> None:
     await message.reply(
-        AdminPhrases.admin_panel(
-            await db.get_user_count(),
-            await db.get_last_check_time_npk(),
-            await db.get_last_check_time_knn(),
-        ),
+        "admin",
         reply_markup=main_admin_panel(),
     )
 
 
-@router.message(Command("add_schedule"), IsAdmin())
-async def admin_add_schedule_command(message: Message) -> None:
-    pass
+# region LOAD SCHEDULE
 
 
-@router.message(Command("add_default_ring_schedule"), IsAdmin())
-async def admin_add_default_ring_schedule_command(message: Message) -> None:
-    pass
+@router.message(
+    F.text.startswith(AdminPhrases.load_schedule_command),
+    IsAdmin(),
+)
+async def load_schedule_select_group_command(
+    message: Message, state: FSMContext, command: CommandObject
+):
+    await state.set_state(LoadScheduleFsm.load_file)
+
+    args = command.args.split()
+
+    group = args[0].lower()
+    load_type = args[1].lower()
+
+    if group not in ["нпк", "кнн"]:
+        await message.answer(ErrorPhrases.group_not_found())
+        return
+
+    await message.answer(AdminPhrases.load_schedule_text())
+
+    await state.storage.update_data(group=group)
+    await state.storage.update_data(type=load_type)
+
+
+@router.message(
+    IsAdmin(),
+    LoadScheduleFsm.load_file,
+)
+async def load_schedule_load_file(message: Message, db: Database, state: FSMContext):
+    data = await state.get_data()
+
+    group = data.get("group")
+    type = data.get("type")
+
+    if type == "file":
+        # TEMPORARY UNAVAIBLE
+        await message.reply("⚠️ TEMPORARY UNAVAIBLE try URL instead")
+        await state.clear()
+        return
+
+        if group == "нпк" and message.photo is not None:
+            files = message.photo
+            file_type = "photo"
+
+        elif group == "кнн" and message.document is not None:
+            files = message.document
+            file_type = "doc"
+
+        else:
+            await message.reply(ErrorPhrases.wrong_file_type())
+            await state.clear()
+            return
+    else:
+        files = message.text
+        file_type = "photo" if group == "нпк" else "doc"
+
+    await state.clear()
+
+    # - - -
+
+    await send_new_post_to_admin(
+        bot=message.bot,
+        group=group,
+        file_type=file_type,
+        files=files,
+        db=db,
+    )
+
+    await message.answer("✅ schedule loaded")
+
+
+# endregion
+
+
+# region ADD RING SCHEDULE
 
 
 @router.message(Command("add_ring_schedule"), IsAdmin())
-async def admin_add_ring_schedule_command(message: Message) -> None:
-    pass
+async def admin_add_ring_schedule_command(
+    message: Message, state: FSMContext, command: CommandObject
+) -> None:
+    await state.set_state(LoadScheduleFsm.load_rings)
+    # todo group, load_type check
+
+    args = command.args.split()
+
+    sch_type = args[2].lower()
+
+    await state.update_data(sch_type=sch_type)
+
+    await message.answer(AdminPhrases.load_schedule_text())
+
+
+@router.message(
+    IsAdmin(),
+    LoadScheduleFsm.load_rings,
+)
+async def admin_add_ring_schedule_load_command(
+    message: Message, db: Database, state: FSMContext
+) -> None:
+    url = message.text
+    data = await state.get_data()
+    sch_type = data.get("sch_type")
+
+    if sch_type == "def":
+        await save_ring_schedule(
+            db, "нпк", get_tomorrow_date(), url, ScheduleType.DEFAULT_RING.value
+        )
+
+    elif sch_type == "reg":
+        await save_ring_schedule(db, "нпк", get_tomorrow_date(), url)
+
+    else:
+        await message.reply(ErrorPhrases.invalid())
+        return
+
+    await message.answer("✅ rings schedule added")
+    await state.clear()
+
+
+# endregion
 
 
 @router.message(Command("var_list"), IsAdmin())
@@ -48,6 +167,18 @@ async def admin_var_list_command(message: Message) -> None:
 @router.message(Command("set_var"), IsAdmin())
 async def admin_set_var_command(message: Message) -> None:
     pass
+
+
+@router.message(Command("clear_jobs"), IsAdmin())
+async def admin_clear_jobs_command(message: Message) -> None:
+    stop_parsing_jobs()
+
+    await message.answer("✅ jobs cleared")
+
+
+@router.message(Command("list"), IsAdmin())
+async def admin_list_command(message: Message) -> None:
+    await message.reply(AdminPhrases.comands_list())
 
 
 @router.message(Command("add_user"), IsAdmin())

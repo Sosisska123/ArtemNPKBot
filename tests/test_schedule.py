@@ -31,6 +31,7 @@ class TestScheduleDatabase(unittest.IsolatedAsyncioTestCase):
         self.mock_session.add = Mock()
         self.mock_session.commit = AsyncMock()
         self.mock_session.refresh = AsyncMock()
+        self.mock_session.in_transaction = Mock(return_value=False)  # Not in transaction
         
         # Execute
         result = await self.db.save_schedule(
@@ -44,6 +45,36 @@ class TestScheduleDatabase(unittest.IsolatedAsyncioTestCase):
         self.mock_session.add.assert_called_once()
         self.mock_session.commit.assert_awaited_once()
         self.mock_session.refresh.assert_awaited_once()
+        
+    async def test_save_schedule_in_transaction(self):
+        # Setup
+        mock_schedule = Schedule(
+            id=1,
+            group=self.test_group,
+            url=self.test_url,
+            date=self.test_date,
+            schedule_type="regular"
+        )
+        
+        self.mock_session.add = Mock()
+        self.mock_session.commit = AsyncMock()
+        self.mock_session.refresh = AsyncMock()
+        self.mock_session.flush = AsyncMock()
+        self.mock_session.in_transaction = Mock(return_value=True)  # In transaction
+        
+        # Execute
+        result = await self.db.save_schedule(
+            self.test_group, 
+            self.test_date, 
+            self.test_url, 
+            "regular"
+        )
+        
+        # Verify
+        self.mock_session.add.assert_called_once()
+        self.mock_session.commit.assert_not_awaited()
+        self.mock_session.refresh.assert_not_awaited()
+        self.mock_session.flush.assert_awaited_once()
         
     async def test_get_schedule_modified_priority(self):
         # Setup - return modified schedule first

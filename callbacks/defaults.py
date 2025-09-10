@@ -8,14 +8,14 @@ from utils.phrases import ButtonPhrases, Phrases
 router = Router()
 
 
-@router.callback_query(F.data.is_(ButtonPhrases.turn_off_notifications_command))
+@router.callback_query(F.data.startswith(ButtonPhrases.turn_off_notifications_command))
 async def turn_off_notifications_query(
     callback: types.CallbackQuery, db: Database
 ) -> None:
     tg_id = callback.from_user.id
-    state = await db.get_notification_state(tg_id)
+    is_turned_on = await db.get_notification_state(tg_id)
 
-    if state is True:
+    if is_turned_on:
         await db.update_notification_state(tg_id, False)
         await callback.answer(Phrases.notifications_off(), show_alert=True)
     else:

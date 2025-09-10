@@ -6,6 +6,11 @@ def get_tomorrow_date():
     return tomorrow.strftime("%Y-%m-%d")
 
 
+def get_today_date():
+    tomorrow = datetime.today()
+    return tomorrow.strftime("%Y-%m-%d")
+
+
 def get_formatted_time(date: datetime):
     formatted_text = datetime.strptime(str(date)[:19], "%Y-%m-%d %H:%M:%S")
 

@@ -11,14 +11,12 @@ from utils.phrases import ButtonPhrases
 def main_user_panel() -> ReplyKeyboardMarkup:
     buttons = [
         [
-            KeyboardButton(text=ButtonPhrases.today_command_panel),
+            KeyboardButton(text=ButtonPhrases.lessons_command_panel),
             KeyboardButton(text=ButtonPhrases.rings_command_panel),
         ]
     ]
 
-    return ReplyKeyboardMarkup(
-        keyboard=buttons, resize_keyboard=True, one_time_keyboard=True
-    )
+    return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 
 def under_post_keyboard() -> InlineKeyboardMarkup:

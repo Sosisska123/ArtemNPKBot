@@ -16,26 +16,32 @@ def main_admin_panel() -> InlineKeyboardMarkup:
                     callback_data=AdminPhrases.check_knn_command,
                 ),
             ],
+            [
+                InlineKeyboardButton(
+                    text=AdminPhrases.load_schedule_command,
+                    callback_data=AdminPhrases.load_schedule_command,
+                ),
+            ],
         ]
     )
 
 
-def manage_new_schedule(msg_id: int) -> InlineKeyboardMarkup:
+def manage_new_schedule(temp_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     builder.button(
         text=AdminPhrases.approve_schdule_command,
-        callback_data=f"{AdminPhrases.approve_schdule_command}:{msg_id}",
+        callback_data=f"{AdminPhrases.approve_schdule_command}:{temp_id}",
     )
 
     builder.button(
         text=AdminPhrases.reject_schdule_command,
-        callback_data=f"{AdminPhrases.reject_schdule_command}:{msg_id}",
+        callback_data=f"{AdminPhrases.reject_schdule_command}:{temp_id}",
     )
 
     builder.button(
         text=AdminPhrases.edit_schdule_command,
-        callback_data=f"{AdminPhrases.edit_schdule_command}:{msg_id}",
+        callback_data=f"{AdminPhrases.edit_schdule_command}:{temp_id}",
     )
 
     return builder.adjust(2).as_markup(resize_keyboard=True)

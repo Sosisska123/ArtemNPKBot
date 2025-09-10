@@ -7,15 +7,16 @@ from db.database import Database
 from keyboards.admin import manage_new_schedule
 from keyboards.default import under_post_keyboard
 
+from models.schedule import ScheduleType
 from models.user import User
 from settings import config
 from utils.date_utils import get_tomorrow_date
-from utils.phrases import Phrases
+from utils.phrases import ErrorPhrases, Phrases
 
 logger = logging.getLogger(__name__)
 
 
-async def mail_users(
+async def send_files_to_users(
     message: str,
     bot: Bot,
     users: list[User],
@@ -98,10 +99,56 @@ async def post_schedule_in_group(
     if not users:
         logger.error("There are no users in group")
 
-    await mail_users(
+    await send_files_to_users(
         message=Phrases.schedule_text(get_tomorrow_date()),
         bot=bot,
         users=users,
+        file_type=file_type,
+        files=files,
+        reply_keyboard=under_post_keyboard(),
+    )
+
+
+async def send_rings_to_user(
+    bot: Bot,
+    user: User,
+    rings_type: str,
+    file_type: str,
+    files: list[str],
+):
+    if user.group == "кнн":
+        bot.send_message(
+            chat_id=user.tg_id,
+            text=Phrases.rings_knn(),
+        )
+
+    rings_date = (
+        get_tomorrow_date()
+        if rings_type == ScheduleType.RING.value
+        else ScheduleType.DEFAULT_RING.value
+    )
+
+    await send_files_to_users(
+        message=Phrases.schedule_text(rings_date),
+        bot=bot,
+        users=[user],
+        file_type=file_type,
+        files=files,
+        reply_keyboard=under_post_keyboard(),
+    )
+
+
+async def send_schedule_to_user(
+    bot: Bot,
+    user: User,
+    file_type: str,
+    files: list[str],
+    date: str | None = None,
+):
+    await send_files_to_users(
+        message=Phrases.schedule_text(get_tomorrow_date() if date is None else date),
+        bot=bot,
+        users=[user],
         file_type=file_type,
         files=files,
         reply_keyboard=under_post_keyboard(),
@@ -112,9 +159,20 @@ async def post_schedule_in_group(
 
 
 async def send_new_post_to_admin(
-    bot: Bot, group: str, file_type: str, files: list[str] | str
+    bot: Bot, group: str, file_type: str, files: list[str] | str, db: Database
 ):
     many_files = are_there_many_files(files)
+
+    # vremenno todo
+    if many_files and file_type == "photo":
+        files = files[1]  # 1 - второй по счету т.е. 2 курс
+        many_files = False
+
+    temp_schedule = await db.save_temp_schedule(group, file_type, files)
+
+    if not temp_schedule:
+        logger.error(ErrorPhrases.something_went_wrong)
+        return
 
     if many_files:
         media_group = MediaGroupBuilder(caption=group)
@@ -129,7 +187,9 @@ async def send_new_post_to_admin(
             messages = await bot.send_media_group(admin, media_group.build())
             msg_id = messages[0].message_id
             await bot.send_message(
-                chat_id=admin, text=group, reply_markup=manage_new_schedule(msg_id)
+                chat_id=admin,
+                text=group,
+                reply_markup=manage_new_schedule(temp_schedule.id),
             )
 
             return
@@ -138,25 +198,25 @@ async def send_new_post_to_admin(
             message = await bot.send_document(
                 caption=group,
                 chat_id=admin,
-                document=files[0],
+                document=files,
             )
             msg_id = message.message_id
             await bot.edit_message_reply_markup(
                 chat_id=admin,
                 message_id=msg_id,
-                reply_markup=manage_new_schedule(msg_id),
+                reply_markup=manage_new_schedule(temp_schedule.id),
             )
         elif file_type == "photo":
             message = await bot.send_photo(
                 caption=group,
                 chat_id=admin,
-                photo=files[0],
+                photo=files,
             )
             msg_id = message.message_id
             await bot.edit_message_reply_markup(
                 chat_id=admin,
                 message_id=msg_id,
-                reply_markup=manage_new_schedule(msg_id),
+                reply_markup=manage_new_schedule(temp_schedule.id),
             )
 
 

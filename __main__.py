@@ -3,6 +3,7 @@ import logging
 
 from aiogram import Dispatcher
 
+
 from handlers.group_selection import router as group_selection_router
 from handlers.schedules import router as schedules_router
 from handlers.defaults import router as default_router
@@ -11,7 +12,6 @@ from handlers.admin import router as admin_router
 from callbacks.schedules import router as schedules_callback_router
 from callbacks.defaults import router as default_callback_router
 from callbacks.admin import router as admin_callback_router
-
 
 from db.database import init_db
 from utils.db_dependency import DBDependency
@@ -57,6 +57,7 @@ async def start() -> None:
         schedules_callback_router,
     )
 
+    # Add throttling middleware after registration middleware
     dp.message.middleware(
         ThrottlingMiddleware(session=async_session, ttl=config.ttl_default)
     )
@@ -78,12 +79,18 @@ async def start() -> None:
     )
 
     vk_requests = VkRequests(
-        group_schemas=[npk_group, knn_group],
+        group_schema=npk_group,
         api_vk_token=config.vk.access_token.get_secret_value(),
         api_ver=config.vk.version,
     )
 
-    # vk_schedule.create_scheduler(vk_requests, db)
+    vk_requests2 = VkRequests(
+        group_schema=knn_group,
+        api_vk_token=config.vk.access_token.get_secret_value(),
+        api_ver=config.vk.version,
+    )
+
+    vk_schedule.create_scheduler(vk_requests, vk_requests2, db_dependency=db_dependency)
 
     await bot.delete_webhook(True)
     await dp.start_polling(bot)
@@ -97,5 +104,6 @@ if __name__ == "__main__":
         # scheduler.shutdown()
         # await bot.session.close()
         logging.info("================ Бот остановлен ================")
+
     except Exception as e:
         logging.error(f"Ошибка {e}", exc_info=True)

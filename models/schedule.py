@@ -1,7 +1,6 @@
 from enum import Enum
 from models.user import Base
-import datetime
-from sqlalchemy import String
+from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -17,8 +16,8 @@ class Schedule(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     group: Mapped[str] = mapped_column(String(10))
-    url: Mapped[str] = mapped_column(String(500))
-    date: Mapped[datetime.date] = mapped_column()
+    url: Mapped[str] = mapped_column(Text, unique=True)
+    date: Mapped[str] = mapped_column()
     schedule_type: Mapped[str] = mapped_column(
         String(20), default=ScheduleType.REGULAR.value
     )

@@ -24,11 +24,10 @@ async def select_group(message: Message, command: CommandObject, db: Database) -
         if command.args.lower() in [
             "нпк",
             "кнн",
-        ]:  # todo заменить на реал группы. когда нибудь
+        ]:  # заменить на реал группы. когда нибудь
             await db.create_user(
                 message.from_user.id,
                 message.from_user.username,
-                message.from_user.first_name,
                 command.args.lower(),
             )
             await message.answer(Phrases.success(), reply_markup=main_user_panel())

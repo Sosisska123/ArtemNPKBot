@@ -6,6 +6,7 @@ from models.schedule import Schedule, ScheduleType
 
 
 # todo кэширование
+# todo оповещение
 
 
 async def get_schedule(
@@ -26,13 +27,35 @@ async def get_default_ring_schedule(db: Database, group: str) -> Optional[Schedu
     return await db.get_ring_schedule(group, ScheduleType.DEFAULT_RING.value)
 
 
-async def get_ring_schedule(db: Database, group: str) -> Optional[Schedule]:
+async def get_ring_schedule(db: Database, group: str) -> list[Optional[Schedule], str]:
+    """вернет дефолт еси нету новых этих"""
+    ring_type = ScheduleType.RING.value
     schedule = await db.get_ring_schedule(group, ScheduleType.RING.value)
 
     if not schedule:
         schedule = await db.get_ring_schedule(group, ScheduleType.DEFAULT_RING.value)
+        ring_type = ScheduleType.DEFAULT_RING.value
 
-    return schedule
+    return schedule, ring_type
+
+
+async def save_schedule(
+    db: Database,
+    group: str,
+    date: str,
+    url: str,
+) -> Optional[Schedule]:
+    return await db.save_schedule(group, date, url, ScheduleType.REGULAR.value)
+
+
+async def save_ring_schedule(
+    db: Database,
+    group: str,
+    date: str,
+    url: str,
+    type: ScheduleType = ScheduleType.RING.value,
+) -> Optional[Schedule]:
+    return await db.save_ring_schedule(group, date, url, type)
 
 
 async def update_today_schedule(
@@ -58,21 +81,4 @@ async def update_default_ring_schedule(
     group: str,
     url: str,
 ) -> Optional[Schedule]:
-    pass
-
-
-async def save_schedule(
-    db: Database,
-    group: str,
-    date: datetime.date,
-    url: str,
-) -> Optional[Schedule]:
-    pass
-
-
-async def save_ring_schedule(
-    db: Database,
-    group: str,
-    url: str,
-) -> Optional[Schedule]:
-    pass
+    return await db.update_ring_schedule(group, url, ScheduleType.DEFAULT_RING.value)

@@ -4,10 +4,13 @@ from sqlalchemy import select
 
 from models.user import Base, User
 from models.schedule import Schedule, ScheduleType
+from models.temp_schedule import TempSchedule
 
 from typing import Optional
 import logging
 import datetime
+
+from utils.date_utils import get_today_date, get_tomorrow_date
 
 log = logging.getLogger(__name__)
 
@@ -33,9 +36,7 @@ class Database:
             log.error(e)
             return None
 
-    async def create_user(
-        self, user_id: int, username: str, name: str, group: str
-    ) -> User:
+    async def create_user(self, user_id: int, username: str, group: str) -> User:
         try:
             user = User(tg_id=user_id, username=username, group=group)
             self.session.add(user)
@@ -87,7 +88,11 @@ class Database:
 
     # schedule methods
     async def save_schedule(
-        self, group: str, date: datetime.date | str, url: str, schedule_type: str
+        self,
+        group: str,
+        date: str,
+        url: str,
+        schedule_type: str = ScheduleType.REGULAR.value,
     ) -> Schedule:
         try:
             schedule = Schedule(
@@ -131,22 +136,20 @@ class Database:
             return None
 
     async def get_tomorrow_schedule(self, group: str) -> Optional[Schedule]:
-        tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-        return await self.get_schedule(group, tomorrow)
+        return await self.get_schedule(group, get_tomorrow_date())
 
     async def get_today_schedule(self, group: str) -> Optional[Schedule]:
-        today = datetime.date.today()
-        return await self.get_schedule(group, today)
+        return await self.get_schedule(group, get_today_date())
 
     async def update_tomorrow_schedule(self, group: str, url: str) -> Schedule:
-        tomorrow = datetime.date.today() + datetime.timedelta(days=1)
         return await self.save_schedule(
-            group, tomorrow, url, ScheduleType.MODIFIED.value
+            group, get_tomorrow_date(), url, ScheduleType.MODIFIED.value
         )
 
     async def update_today_schedule(self, group: str, url: str) -> Schedule:
-        today = datetime.date.today()
-        return await self.save_schedule(group, today, url, ScheduleType.MODIFIED.value)
+        return await self.save_schedule(
+            group, get_today_date(), url, ScheduleType.MODIFIED.value
+        )
 
     # - - - rings
 
@@ -163,16 +166,93 @@ class Database:
             schedule = result.scalar_one_or_none()
 
             return schedule
+
         except SQLAlchemyError as e:
             log.error(e)
             return None
 
     async def save_ring_schedule(
-        self, group: str, date: datetime.date, url: str
+        self,
+        group: str,
+        date: str,
+        url: str,
+        type: ScheduleType = ScheduleType.RING.value,
     ) -> Schedule:
-        await self.save_schedule(group, date, url, ScheduleType.RING.value)
+        await self.save_schedule(group, date, url, type)
 
-    async def save_default_ring_schedule(self, group: str, url: str) -> Schedule:
-        await self.save_schedule(
-            group, datetime.date.today(), url, ScheduleType.DEFAULT_RING.value
+    async def update_ring_schedule(
+        self,
+        group: str,
+        url: str,
+    ) -> Schedule:
+        return await self.save_schedule(
+            group, get_today_date(), url, ScheduleType.RING.value
         )
+
+    # - - - schedule До проверки
+
+    async def save_temp_schedule(
+        self, group: str, file_type: str, files_url: list[str]
+    ) -> TempSchedule:
+        try:
+            temp_schedule = TempSchedule(
+                group=group,
+                file_type=file_type,
+                files_url=files_url,  # todo чтобы хрнаить списком нужно json.dumps(files_url) и какой-то мусор чтобы список был
+            )
+
+            self.session.add(temp_schedule)
+
+            if not self.session.in_transaction():
+                await self.session.commit()
+                await self.session.refresh(temp_schedule)
+            else:
+                await self.session.flush()
+
+            return temp_schedule
+        except SQLAlchemyError as e:
+            log.error(e)
+
+            if not self.session.in_transaction():
+                await self.session.rollback()
+            return None
+
+    async def get_temp_schedule(self, temp_id: int) -> Optional[TempSchedule]:
+        try:
+            result = await self.session.execute(
+                select(TempSchedule).where(TempSchedule.id == temp_id)
+            )
+            return result.scalar_one_or_none()
+        except SQLAlchemyError as e:
+            log.error(e)
+            return None
+
+    async def delete_temp_schedule(self, temp_id: int) -> bool:
+        try:
+            temp_schedule = await self.get_temp_schedule(temp_id)
+
+            if temp_schedule:
+                await self.session.delete(temp_schedule)
+
+                await self.session.commit()
+
+                return True
+            return False
+        except SQLAlchemyError as e:
+            log.error(e)
+
+            if not self.session.in_transaction():
+                await self.session.rollback()
+            return False
+
+    async def clear_temp_schedules(self) -> bool:
+        try:
+            await self.session.execute(TempSchedule.__table__.delete())
+
+            await self.session.commit()
+
+            return True
+        except SQLAlchemyError as e:
+            log.error(e)
+            await self.session.rollback()
+            return False

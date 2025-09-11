@@ -59,7 +59,7 @@ async def start_parsing_scheduler(*vk: VkRequests, db_dependency: DBDependency):
             next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=10),
             args=[vk_group],
             kwargs={"db_dependency": db_dependency},
-            max_instances=1,
+            max_instances=2,
             coalesce=True,
         )
 

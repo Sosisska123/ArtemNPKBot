@@ -13,7 +13,10 @@ from services.schedule import save_schedule
 
 router = Router()
 
+# region MANAGE NEW SCHEDULE
 
+
+# подтвердить и отправить свеженькое расписание в группу + сохранение в БД
 @router.callback_query(
     F.data.startswith(AdminPhrases.approve_schdule_command), IsAdmin()
 )
@@ -25,7 +28,7 @@ async def admin_accept_schedule_command(
     temp_schedule = await db.get_temp_schedule(temp_id)
 
     if not temp_schedule:
-        await callback.answer("not temp_schedule")
+        await callback.answer("not temp_schedule error")
         return
 
     await post_schedule_in_group(
@@ -33,7 +36,7 @@ async def admin_accept_schedule_command(
         db=db,
         group=temp_schedule.group,
         file_type=temp_schedule.file_type,
-        files=[temp_schedule.files_url],
+        files=temp_schedule.files_url,
     )
 
     await db.delete_temp_schedule(temp_id)
@@ -41,13 +44,14 @@ async def admin_accept_schedule_command(
     await save_schedule(
         db=db,
         group=temp_schedule.group,
-        date=get_tomorrow_date(),  # todo schedyle date + timedelta 1 day
+        date=get_tomorrow_date(),
         url=temp_schedule.files_url,
     )
 
     await callback.message.delete()
 
 
+# итак понятно вроде, удалить удалить и все
 @router.callback_query(
     F.data.startswith(AdminPhrases.reject_schdule_command), IsAdmin()
 )
@@ -74,3 +78,6 @@ async def admin_edit_schedule_command(
         return
 
     # todo
+
+
+# endregion

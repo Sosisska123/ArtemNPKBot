@@ -36,7 +36,7 @@ class VkRequests:
         async with aiohttp.ClientSession() as session:
             try:
                 logger.info("- - - - - - - - - - - - - - - - - - - - - - -")
-                logger.info("STARTING FETCH POSTS FROM %s", self.group)
+                logger.info("STARTING FETCH POSTS FROM | %s", self.group.domain)
 
                 async with session.get(
                     self.url, params=self.params, proxy=self.proxy
@@ -52,10 +52,10 @@ class VkRequests:
                         # File Is Already Parsed
                         return result
 
-                    # elif self.last_post_date == "":
-                    #     # now its the latest post
-                    #     self.last_post_date = file_date
-                    #     return result
+                    elif self.last_post_date == "":
+                        # now its the latest post
+                        self.last_post_date = file_date
+                        return result
 
                     if (
                         file_type == "photo"

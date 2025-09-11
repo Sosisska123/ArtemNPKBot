@@ -49,7 +49,7 @@ async def send_files_to_users(
             await bot.send_document(
                 caption=message,
                 chat_id=user.tg_id,
-                document=files[0],
+                document=files,
                 reply_markup=reply_keyboard,
             )
 
@@ -57,21 +57,7 @@ async def send_files_to_users(
             await bot.send_photo(
                 caption=message,
                 chat_id=user.tg_id,
-                photo=files[0],
-                reply_markup=reply_keyboard,
-            )
-
-        elif file_type == "sticker":
-            await bot.send_sticker(
-                chat_id=user.tg_id,
-                sticker=files[0],
-                reply_markup=reply_keyboard,
-            )
-
-        elif file_type is None or files is None:
-            await bot.send_message(
-                chat_id=user.tg_id,
-                text=message,
+                photo=files,
                 reply_markup=reply_keyboard,
             )
         else:
@@ -114,7 +100,7 @@ async def send_rings_to_user(
     user: User,
     rings_type: str,
     file_type: str,
-    files: list[str],
+    files: list[str] | str,
 ):
     if user.group == "кнн":
         bot.send_message(
@@ -142,7 +128,7 @@ async def send_schedule_to_user(
     bot: Bot,
     user: User,
     file_type: str,
-    files: list[str],
+    files: list[str] | str,
     date: str | None = None,
 ):
     await send_files_to_users(
@@ -163,10 +149,20 @@ async def send_new_post_to_admin(
 ):
     many_files = are_there_many_files(files)
 
-    # vremenno todo
-    if many_files and file_type == "photo":
-        files = files[1]  # 1 - второй по счету т.е. 2 курс
-        many_files = False
+    # vremenno todo ⚠️⚠️⚠️ temp
+    if file_type == "photo":
+        if (
+            len(files) == 5
+        ):  # 5 - vmeste s ring schedyle todo ring checking:: ring | 1 course | 2c | 3c | ...
+            files = files[2]
+            many_files = False
+
+        elif many_files:
+            files = files[1]  # 1 - второй по счету т.е. 2 курс
+            many_files = False
+
+        elif many_files:  # пока что так, чтобы ничего не ломалось
+            files = files[0]
 
     temp_schedule = await db.save_temp_schedule(group, file_type, files)
 
@@ -184,8 +180,8 @@ async def send_new_post_to_admin(
 
     for admin in config.admins:
         if many_files:
-            messages = await bot.send_media_group(admin, media_group.build())
-            msg_id = messages[0].message_id
+            await bot.send_media_group(admin, media_group.build())
+
             await bot.send_message(
                 chat_id=admin,
                 text=group,
@@ -195,27 +191,18 @@ async def send_new_post_to_admin(
             return
 
         if file_type == "doc":
-            message = await bot.send_document(
+            await bot.send_document(
                 caption=group,
                 chat_id=admin,
                 document=files,
-            )
-            msg_id = message.message_id
-            await bot.edit_message_reply_markup(
-                chat_id=admin,
-                message_id=msg_id,
                 reply_markup=manage_new_schedule(temp_schedule.id),
             )
+
         elif file_type == "photo":
-            message = await bot.send_photo(
+            await bot.send_photo(
                 caption=group,
                 chat_id=admin,
                 photo=files,
-            )
-            msg_id = message.message_id
-            await bot.edit_message_reply_markup(
-                chat_id=admin,
-                message_id=msg_id,
                 reply_markup=manage_new_schedule(temp_schedule.id),
             )
 
@@ -227,6 +214,9 @@ async def send_report_to_admin(bot: Bot, report: str):
 
 def are_there_many_files(files: list[str]) -> bool:
     if isinstance(files, str):
-        files = [files]
+        return False
+
+    elif isinstance(files, list) and len(files) == 1:
+        return False
 
     return len(files) > 1

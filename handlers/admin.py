@@ -25,6 +25,7 @@ router = Router()
 log = logging.getLogger(__name__)
 
 
+# create admin menu, command variant
 @router.message(Command("admin"), IsAdmin())
 async def admin_panel_command(message: Message) -> None:
     await message.reply(
@@ -36,6 +37,7 @@ async def admin_panel_command(message: Message) -> None:
 # region LOAD SCHEDULE
 
 
+@router.message(Command(AdminPhrases.command_add_schedule), IsAdmin())
 @router.message(
     F.text.startswith(AdminPhrases.load_schedule_command),
     IsAdmin(),
@@ -56,8 +58,8 @@ async def load_schedule_select_group_command(
 
     await message.answer(AdminPhrases.load_schedule_text())
 
-    await state.storage.update_data(group=group)
-    await state.storage.update_data(type=load_type)
+    await state.update_data(group=group)
+    await state.update_data(type=load_type)
 
 
 @router.message(
@@ -94,8 +96,6 @@ async def load_schedule_load_file(message: Message, db: Database, state: FSMCont
 
     await state.clear()
 
-    # - - -
-
     await send_new_post_to_admin(
         bot=message.bot,
         group=group,
@@ -104,8 +104,6 @@ async def load_schedule_load_file(message: Message, db: Database, state: FSMCont
         db=db,
     )
 
-    await message.answer("✅ schedule loaded")
-
 
 # endregion
 
@@ -113,7 +111,7 @@ async def load_schedule_load_file(message: Message, db: Database, state: FSMCont
 # region ADD RING SCHEDULE
 
 
-@router.message(Command("add_ring_schedule"), IsAdmin())
+@router.message(Command(AdminPhrases.command_add_ring_schedule), IsAdmin())
 async def admin_add_ring_schedule_command(
     message: Message, state: FSMContext, command: CommandObject
 ) -> None:
@@ -149,39 +147,39 @@ async def admin_add_ring_schedule_load_command(
         await save_ring_schedule(db, "нпк", get_tomorrow_date(), url)
 
     else:
-        await message.reply(ErrorPhrases.invalid())
+        await message.reply(ErrorPhrases.invalid(), reply_markup=main_admin_panel())
         return
 
-    await message.answer("✅ rings schedule added")
+    await message.answer("✅ rings schedule added", reply_markup=main_admin_panel())
     await state.clear()
 
 
 # endregion
 
 
-@router.message(Command("var_list"), IsAdmin())
+@router.message(Command(AdminPhrases.command_list_var), IsAdmin())
 async def admin_var_list_command(message: Message) -> None:
     pass
 
 
-@router.message(Command("set_var"), IsAdmin())
+@router.message(Command(AdminPhrases.command_set_var), IsAdmin())
 async def admin_set_var_command(message: Message) -> None:
     pass
 
 
-@router.message(Command("clear_jobs"), IsAdmin())
+@router.message(Command(AdminPhrases.command_clear_jobs), IsAdmin())
 async def admin_clear_jobs_command(message: Message) -> None:
     stop_parsing_jobs()
 
     await message.answer("✅ jobs cleared")
 
 
-@router.message(Command("list"), IsAdmin())
+@router.message(Command(AdminPhrases.command_list), IsAdmin())
 async def admin_list_command(message: Message) -> None:
     await message.reply(AdminPhrases.comands_list())
 
 
-@router.message(Command("add_user"), IsAdmin())
+@router.message(Command(AdminPhrases.command_add_user), IsAdmin())
 async def admin_add_user_command(
     message: Message,
     command: CommandObject,

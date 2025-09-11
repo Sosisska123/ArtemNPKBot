@@ -63,9 +63,12 @@ class Database:
             user = await self.get_user(user_id)
             if user:
                 user.notification_state = notification_state
-            return True
+                await self.session.commit()
+                return True
+            return False
         except SQLAlchemyError as e:
             log.error(e)
+            await self.session.rollback()
             return False
 
     async def get_all_users_from_group(
@@ -141,15 +144,8 @@ class Database:
     async def get_today_schedule(self, group: str) -> Optional[Schedule]:
         return await self.get_schedule(group, get_today_date())
 
-    async def update_tomorrow_schedule(self, group: str, url: str) -> Schedule:
-        return await self.save_schedule(
-            group, get_tomorrow_date(), url, ScheduleType.MODIFIED.value
-        )
-
-    async def update_today_schedule(self, group: str, url: str) -> Schedule:
-        return await self.save_schedule(
-            group, get_today_date(), url, ScheduleType.MODIFIED.value
-        )
+    async def update_schedule(self, group: str, date: str, url: str) -> Schedule:
+        return await self.save_schedule(group, date, url, ScheduleType.MODIFIED.value)
 
     # - - - rings
 
@@ -157,12 +153,22 @@ class Database:
         self, group: str, type: ScheduleType = ScheduleType.DEFAULT_RING.value
     ) -> Optional[Schedule]:
         try:
-            result = await self.session.execute(
-                select(Schedule).where(
-                    Schedule.group == group,
-                    Schedule.schedule_type == type,
+            if type == ScheduleType.RING.value:
+                result = await self.session.execute(
+                    select(Schedule).where(
+                        Schedule.group == group,
+                        Schedule.schedule_type == type,
+                        Schedule.date == get_tomorrow_date(),
+                    )
                 )
-            )
+            else:
+                result = await self.session.execute(
+                    select(Schedule).where(
+                        Schedule.group == group,
+                        Schedule.schedule_type == type,
+                    )
+                )
+
             schedule = result.scalar_one_or_none()
 
             return schedule
@@ -192,7 +198,7 @@ class Database:
     # - - - schedule До проверки
 
     async def save_temp_schedule(
-        self, group: str, file_type: str, files_url: list[str]
+        self, group: str, file_type: str, files_url: str
     ) -> TempSchedule:
         try:
             temp_schedule = TempSchedule(
@@ -202,12 +208,8 @@ class Database:
             )
 
             self.session.add(temp_schedule)
-
-            if not self.session.in_transaction():
-                await self.session.commit()
-                await self.session.refresh(temp_schedule)
-            else:
-                await self.session.flush()
+            await self.session.commit()
+            await self.session.refresh(temp_schedule)
 
             return temp_schedule
         except SQLAlchemyError as e:

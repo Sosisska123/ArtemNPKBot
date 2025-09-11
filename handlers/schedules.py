@@ -12,7 +12,6 @@ from utils.mailing_handler import (
 from utils.phrases import ButtonPhrases, Phrases
 
 from services.schedule import (
-    get_today_schedule,
     get_ring_schedule,
 )
 
@@ -26,6 +25,10 @@ log = logging.getLogger(__name__)
 async def get_schedule_command(message: Message, db: Database):
     user = await db.get_user(message.from_user.id)
 
+    if not user:
+        await message.answer(Phrases.first_greeting())
+        return
+
     schedule = await db.get_tomorrow_schedule(user.group)
 
     if schedule is not None:
@@ -33,7 +36,7 @@ async def get_schedule_command(message: Message, db: Database):
             message.bot,
             user,
             schedule.file_type,
-            [schedule.url],
+            schedule.url,
         )
     else:
         await message.answer(Phrases.no_schedule_text())
@@ -44,13 +47,18 @@ async def get_schedule_command(message: Message, db: Database):
 async def get_today_schedule_command(message: Message, db: Database):
     user = await db.get_user(message.from_user.id)
 
-    schedule = await get_today_schedule(db, user.group)
+    if not user:
+        await message.answer(Phrases.first_greeting())
+        return
+
+    schedule = await db.get_today_schedule(user.group)
+
     if schedule:
         await send_schedule_to_user(
             message.bot,
             user,
             schedule.file_type,
-            [schedule.url],
+            schedule.url,
             date=schedule.date,
         )
     else:
@@ -62,6 +70,10 @@ async def get_today_schedule_command(message: Message, db: Database):
 async def get_rings_schedule_command(message: Message, db: Database):
     user = await db.get_user(message.from_user.id)
 
+    if not user:
+        await message.answer(Phrases.first_greeting())
+        return
+
     schedule, ring_type = await get_ring_schedule(db, user.group)
 
     if schedule:
@@ -70,7 +82,7 @@ async def get_rings_schedule_command(message: Message, db: Database):
             user,
             ring_type,
             schedule.file_type,
-            [schedule.url],
+            schedule.url,
         )
     else:
         await message.answer(Phrases.no_schedule_text())

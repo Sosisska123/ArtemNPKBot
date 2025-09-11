@@ -1,8 +1,11 @@
 import datetime
 from typing import Optional
 
+from yarg import get
+
 from db.database import Database
 from models.schedule import Schedule, ScheduleType
+from utils.date_utils import get_tomorrow_date
 
 
 # todo кэширование
@@ -45,6 +48,9 @@ async def save_schedule(
     date: str,
     url: str,
 ) -> Optional[Schedule]:
+    if db.get_schedule(group, date):
+        return await db.update_schedule(group, date, url)
+
     return await db.save_schedule(group, date, url, ScheduleType.REGULAR.value)
 
 
@@ -67,7 +73,7 @@ async def update_today_schedule(
 async def update_tomorrow_schedule(
     db: Database, group: str, url: str
 ) -> Optional[Schedule]:
-    return await db.update_tomorrow_schedule(group, url)
+    return await db.update_schedule(group, url, get_tomorrow_date())
 
 
 async def update_ring_schedule(

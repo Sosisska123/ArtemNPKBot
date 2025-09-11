@@ -76,7 +76,7 @@ class AdminPhrases:
 
     @staticmethod
     def comands_list():
-        return "/load_schedule [нпк/кнн] [file/url] - загрузить расписание\n/add_ring_schedule [нпк/кнн] [file/url] [reg/def] - добавить расписание звонков. reg - только на завтра, def - дефолтное\n\n/var_list - список переменных бота\n/set_var [var] [value] - изменить переменную бота\n/clear_jobs - очистить планировщик\n/list - список команд\n/add_user [id] [group] - добавить пользователя"
+        return f"/{AdminPhrases.command_add_schedule} [нпк/кнн] [file/url] - загрузить расписание\n/{AdminPhrases.command_add_ring_schedule} [нпк/кнн] [file/url] [reg/def] - добавить расписание звонков. reg - только на завтра, def - дефолтное\n\n/{AdminPhrases.command_list_var} - список переменных бота\n/{AdminPhrases.command_set_var} [var] [value] - изменить переменную бота\n/{AdminPhrases.command_clear_jobs} - очистить планировщик\n/{AdminPhrases.command_list} - список команд\n/{AdminPhrases.command_add_user} [id] [group] - добавить пользователя"
 
     # ---
 
@@ -91,6 +91,14 @@ class AdminPhrases:
     edit_schdule_command: str = "✏️ Редактировать"
 
     # - - -
+
+    command_list: str = "list"
+    command_add_user: str = "add_user"
+    command_clear_jobs: str = "clear_jobs"
+    command_set_var: str = "set_var"
+    command_list_var: str = "list_var"
+    command_add_ring_schedule: str = "add_ring_schedule"
+    command_add_schedule: str = "add_schedule"
 
 
 class ErrorPhrases:
@@ -153,3 +161,4 @@ class ButtonPhrases:
     # ---
 
     turn_off_notifications_command: str = "🔕 Отключить уведомления"
+    turn_on_notifications_command: str = "✅ Включить уведомления"

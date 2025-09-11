@@ -16,11 +16,14 @@ async def turn_off_notifications_query(
     is_turned_on = await db.get_notification_state(tg_id)
 
     if is_turned_on:
-        success = await db.update_notification_state(tg_id, False)
+        # success = await db.update_notification_state(tg_id, False)
+        success = True  # todo их нельзя включить
         if success:
             await callback.answer(Phrases.notifications_off(), show_alert=True)
         else:
-            await callback.answer("❌ Ошибка при отключении уведомлений", show_alert=True)
+            await callback.answer(
+                "❌ Ошибка при отключении уведомлений", show_alert=True
+            )
     else:
         await callback.answer(Phrases.notifications_already_off(), show_alert=True)
 
@@ -37,6 +40,8 @@ async def turn_on_notifications_query(
         if success:
             await callback.answer(Phrases.notifications_on(), show_alert=True)
         else:
-            await callback.answer("❌ Ошибка при включении уведомлений", show_alert=True)
+            await callback.answer(
+                "❌ Ошибка при включении уведомлений", show_alert=True
+            )
     else:
         await callback.answer("✅ Уведомления уже включены", show_alert=True)

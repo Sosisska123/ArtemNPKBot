@@ -16,6 +16,10 @@ async def get_ring_schedule_command(
 ) -> None:
     user = await db.get_user(callback.from_user.id)
 
+    if not user:
+        await callback.message.answer(Phrases.first_greeting())
+        return
+
     schedule, ring_type = await get_ring_schedule(db, user.group)
 
     if schedule:
@@ -24,7 +28,7 @@ async def get_ring_schedule_command(
             user,
             ring_type,
             schedule.file_type,
-            [schedule.url],
+            schedule.url,
         )
     else:
-        await callback.message.answer(Phrases.no_schedule_text())
+        await callback.answer(Phrases.no_schedule_text(), show_alert=True)

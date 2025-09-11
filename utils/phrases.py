@@ -76,7 +76,7 @@ class AdminPhrases:
 
     @staticmethod
     def comands_list():
-        return f"/{AdminPhrases.command_add_schedule} [нпк/кнн] [file/url] - загрузить расписание\n/{AdminPhrases.command_add_ring_schedule} [нпк/кнн] [file/url] [reg/def] - добавить расписание звонков. reg - только на завтра, def - дефолтное\n\n/{AdminPhrases.command_list_var} - список переменных бота\n/{AdminPhrases.command_set_var} [var] [value] - изменить переменную бота\n/{AdminPhrases.command_clear_jobs} - очистить планировщик\n/{AdminPhrases.command_list} - список команд\n/{AdminPhrases.command_add_user} [id] [group] - добавить пользователя"
+        return f"/{AdminPhrases.command_add_schedule} [нпк/кнн] [file/url] - загрузить расписание\n/{AdminPhrases.command_add_ring_schedule} [нпк/кнн] [file/url] [reg/def] - добавить расписание звонков. reg - только на завтра, def - дефолтное\n\n/{AdminPhrases.command_list_var} - список переменных бота\n/{AdminPhrases.command_set_var} [var] [value] - изменить переменную бота\n/{AdminPhrases.command_clear_jobs} - очистить планировщик\n/{AdminPhrases.command_list} - список команд\n/{AdminPhrases.command_add_user} [id] [group] [username] - добавить пользователя"
 
     # ---
 
@@ -157,6 +157,7 @@ class ButtonPhrases:
     lessons_command_panel: str = "🧾 Расписание tomorrow"
     today_command_panel: str = "📝 Расписание на сегодня"
     rings_command_panel: str = "🛎️ Расписание звонков"
+    settings_command_panel: str = "⚙️ Настройки"
 
     # ---
 

@@ -185,15 +185,20 @@ async def admin_add_user_command(
     command: CommandObject,
     db: Database,
 ) -> None:
-    # /add_user [ID] [GROUP]
+    # /add_user [ID] [GROUP] [username]
+    args = command.args.split()
+
+    if len(args) != 2:
+        await message.reply(ErrorPhrases.length_error())
+        return
+
     try:
         await db.create_user(
-            command.args[0].lower(),
-            message.from_user.username,
-            message.from_user.first_name,
-            command.args[1].lower(),
+            args[0].lower(),
+            args[2],
+            args[1].lower(),
         )
-        await message.answer(AdminPhrases.success(), reply_markup=main_admin_panel())
+        await message.answer("✅ user added", reply_markup=main_admin_panel())
 
     except TypeError as e:
         await message.reply(ErrorPhrases.invalid())

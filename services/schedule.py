@@ -1,8 +1,6 @@
 import datetime
 from typing import Optional
 
-from yarg import get
-
 from db.database import Database
 from models.schedule import Schedule, ScheduleType
 from utils.date_utils import get_tomorrow_date

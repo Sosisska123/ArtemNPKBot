@@ -13,7 +13,7 @@ from bot_file import bot
 
 
 logger = logging.getLogger(__name__)
-scheduler = AsyncIOScheduler()
+scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
 
 daily_job_id = "daily_scheduler"
 parsing_job_id = "parsing_job"
@@ -26,6 +26,10 @@ def create_scheduler(*vk_requests: VkRequests, db_dependency: DBDependency):
         vk_requests (VkRequests): вк для запромов
         db (Database): дб для получения лошков
     """
+
+    if is_today_saturday():
+        return
+
     scheduler.add_job(
         func=start_parsing_scheduler,
         trigger="cron",
@@ -109,3 +113,7 @@ def stop_parsing_jobs():
         if job.id.startswith("parsing_job"):
             scheduler.remove_job(job.id)
     scheduler.print_jobs()
+
+
+def is_today_saturday():
+    return datetime.date.today().weekday() == 5

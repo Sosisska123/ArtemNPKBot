@@ -6,10 +6,14 @@ import logging
 
 from db.database import Database
 from utils.db_dependency import DBDependency
+
 from vk.vk_requests import VkRequests
+from vk.schemas.vk_group import KNNVkGroup, NPKVkGroup
 
 from utils.mailing_handler import send_new_post_to_admin
 from bot_file import bot
+
+from settings import config
 
 
 logger = logging.getLogger(__name__)
@@ -17,6 +21,31 @@ scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
 
 daily_job_id = "daily_scheduler"
 parsing_job_id = "parsing_job"
+
+npk_group = NPKVkGroup(
+    domain=config.vk.group_domains[0],
+    group_name_shortcut="нпк",
+    start_post_offset=1,
+    return_file_type="photo",
+)
+knn_group = KNNVkGroup(
+    domain=config.vk.group_domains[1],
+    group_name_shortcut="кнн",
+    start_post_offset=0,
+    return_file_type="doc",
+)
+
+npk_vk_requests = VkRequests(
+    group_schema=npk_group,
+    api_vk_token=config.vk.access_token.get_secret_value(),
+    api_ver=config.vk.version,
+)
+
+knn_vk_requests = VkRequests(
+    group_schema=knn_group,
+    api_vk_token=config.vk.access_token.get_secret_value(),
+    api_ver=config.vk.version,
+)
 
 
 def create_scheduler(*vk_requests: VkRequests, db_dependency: DBDependency):

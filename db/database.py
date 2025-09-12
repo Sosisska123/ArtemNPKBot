@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from models.user import Base, User
 from models.schedule import Schedule, ScheduleType
@@ -95,16 +95,33 @@ class Database:
         group: str,
         date: str,
         url: str,
+        file_type: str,
         schedule_type: str = ScheduleType.REGULAR.value,
     ) -> Schedule:
+        """Common method for saving schedule
+
+
+        Args:
+            group (str): Group name
+            date (str): Schedule date
+            url (str): Schedule URL (VK)
+            file_type (str): Used for bot proper file sending. Can be only photo/doc
+            schedule_type (str, optional): Type of schedule, can be modified or regular. Modified type has more priority. Defaults to ScheduleType.REGULAR.value.
+
+        Returns:
+            Schedule: The new schedule object
+        """
         try:
             schedule = Schedule(
-                group=group, date=date, url=url, schedule_type=schedule_type
+                group=group,
+                url=url,
+                date=date,
+                schedule_type=schedule_type,
+                file_type=file_type,
             )
 
             self.session.add(schedule)
             await self.session.commit()
-            await self.session.refresh(schedule)
             return schedule
         except SQLAlchemyError as e:
             log.error(e)
@@ -112,6 +129,16 @@ class Database:
             return None
 
     async def get_schedule(self, group: str, date: datetime.date) -> Optional[Schedule]:
+        """Common method for getting schedule. Returns the modified schedule if it exists
+
+        Args:
+            group (str): group name
+            date (datetime.date): date of the schedule
+
+        Returns:
+            Optional[Schedule]: The new schedule object
+        """
+
         try:
             # сначала чекает измену  в расписании
             result = await self.session.execute(
@@ -121,7 +148,7 @@ class Database:
                     Schedule.schedule_type == ScheduleType.MODIFIED.value,
                 )
             )
-            schedule = result.scalar_one_or_none()
+            schedule = result.scalar()
 
             if not schedule:
                 result = await self.session.execute(
@@ -131,7 +158,7 @@ class Database:
                         Schedule.schedule_type == ScheduleType.REGULAR.value,
                     )
                 )
-                schedule = result.scalar_one_or_none()
+                schedule = result.scalar()
 
             return schedule
         except SQLAlchemyError as e:
@@ -139,13 +166,63 @@ class Database:
             return None
 
     async def get_tomorrow_schedule(self, group: str) -> Optional[Schedule]:
+        """Shortcut for get_schedule(group, get_tomorrow_date())
+
+        Args:
+            group (str): group name
+
+        Returns:
+            Optional[Schedule]: The new schedule object
+        """
+
         return await self.get_schedule(group, get_tomorrow_date())
 
     async def get_today_schedule(self, group: str) -> Optional[Schedule]:
+        """Shortcut for get_schedule(group, get_today_date())
+
+        Args:
+            group (str): group name
+
+        Returns:
+            Optional[Schedule]: The new schedule object
+        """
+
         return await self.get_schedule(group, get_today_date())
 
     async def update_schedule(self, group: str, date: str, url: str) -> Schedule:
-        return await self.save_schedule(group, date, url, ScheduleType.MODIFIED.value)
+        """Updates `URL` of the certain schedule. The new `URL` must match to the `file_type` of its schedule
+
+
+        Args:
+            group (str): The group of the schedule that needs to be updated
+            date (str): The date of the schedule that needs to be updated
+            url (str): URL Link to the new schedule
+
+
+        Returns:
+            Schedule: The updated schedule object
+        """
+        try:
+            result = await self.session.execute(
+                update(Schedule)
+                .where(
+                    Schedule.group == group,
+                    Schedule.date == date,
+                    Schedule.schedule_type == ScheduleType.REGULAR.value
+                    or ScheduleType.MODIFIED.value,
+                )
+                .values(
+                    url=url,
+                    schedule_type=ScheduleType.MODIFIED.value,
+                )
+            )
+
+            await self.session.commit()
+            return result
+        except SQLAlchemyError as e:
+            log.error(e)
+            await self.session.rollback()
+            return None
 
     # - - - rings
 
@@ -169,7 +246,7 @@ class Database:
                     )
                 )
 
-            schedule = result.scalar_one_or_none()
+            schedule = result.scalar()
 
             return schedule
 
@@ -209,7 +286,8 @@ class Database:
 
             self.session.add(temp_schedule)
             await self.session.commit()
-            await self.session.refresh(temp_schedule)
+            # Remove refresh to avoid issues with closed session
+            # await self.session.refresh(temp_schedule)
 
             return temp_schedule
         except SQLAlchemyError as e:

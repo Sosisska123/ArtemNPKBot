@@ -45,11 +45,14 @@ async def save_schedule(
     group: str,
     date: str,
     url: str,
+    file_type: str,
 ) -> Optional[Schedule]:
-    if db.get_schedule(group, date):
+    if await db.get_schedule(group, date):
         return await db.update_schedule(group, date, url)
 
-    return await db.save_schedule(group, date, url, ScheduleType.REGULAR.value)
+    return await db.save_schedule(
+        group, date, url, file_type, ScheduleType.REGULAR.value
+    )
 
 
 async def save_ring_schedule(

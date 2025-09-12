@@ -6,9 +6,11 @@ from filters.is_admin import IsAdmin
 
 from utils.date_utils import get_tomorrow_date
 from utils.phrases import AdminPhrases
-from utils.mailing_handler import post_schedule_in_group
+from utils.mailing_handler import post_schedule_in_group, send_new_post_to_admin
 
 from services.schedule import save_schedule
+
+from vk.vk_schedule import npk_vk_requests, knn_vk_requests
 
 
 router = Router()
@@ -31,21 +33,22 @@ async def admin_accept_schedule_command(
         await callback.answer("not temp_schedule error")
         return
 
+    await save_schedule(
+        db=db,
+        group=temp_schedule.group,
+        date=get_tomorrow_date(),
+        url=temp_schedule.files_url,
+        file_type=temp_schedule.file_type,
+    )
+
+    await db.delete_temp_schedule(temp_id)
+
     await post_schedule_in_group(
         bot=callback.bot,
         db=db,
         group=temp_schedule.group,
         file_type=temp_schedule.file_type,
         files=temp_schedule.files_url,
-    )
-
-    await db.delete_temp_schedule(temp_id)
-
-    await save_schedule(
-        db=db,
-        group=temp_schedule.group,
-        date=get_tomorrow_date(),
-        url=temp_schedule.files_url,
     )
 
     await callback.message.delete()
@@ -78,6 +81,61 @@ async def admin_edit_schedule_command(
         return
 
     # todo
+
+
+# endregion
+
+# region FETCHING FROM GROUPS
+
+
+@router.callback_query(F.data.startswith(AdminPhrases.check_npk_command), IsAdmin())
+async def admin_check_npk_command(callback: types.CallbackQuery, db: Database) -> None:
+    # todo make shared function
+    result = await npk_vk_requests.check_last_post()
+
+    await callback.message.edit_text(
+        f"🕰️ checking {knn_vk_requests.group.group_name_shortcut}..."
+    )
+
+    if result and len(result) > 0:
+        await callback.message.delete()
+
+        for group in result.values():
+            await send_new_post_to_admin(
+                bot=callback.bot,
+                group=group.group_name_shortcut,
+                file_type=group.return_file_type,
+                files=group.files_url,
+                db=db,
+            )
+
+    else:
+        await callback.message.edit_text("⚠️ пусто. видимо уже нового расписания нет")
+
+
+@router.callback_query(F.data.startswith(AdminPhrases.check_knn_command), IsAdmin())
+async def admin_check_knn_command(callback: types.CallbackQuery, db: Database) -> None:
+    # todo make shared function
+    result = await knn_vk_requests.check_last_post()
+
+    await callback.message.edit_text(
+        f"🕰️ checking {knn_vk_requests.group.group_name_shortcut}..."
+    )
+
+    if result and len(result) > 0:
+        await callback.message.delete()
+
+        for group in result.values():
+            await send_new_post_to_admin(
+                bot=callback.bot,
+                group=group.group_name_shortcut,
+                file_type=group.return_file_type,
+                files=group.files_url,
+                db=db,
+            )
+
+    else:
+        await callback.message.edit_text("⚠️ пусто. видимо уже нового расписания нет")
 
 
 # endregion

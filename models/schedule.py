@@ -21,4 +21,4 @@ class Schedule(Base):
     schedule_type: Mapped[str] = mapped_column(
         String(20), default=ScheduleType.REGULAR.value
     )
-    file_type: Mapped[str] = mapped_column(String(10), default="photo")
+    file_type: Mapped[str] = mapped_column(String(10))

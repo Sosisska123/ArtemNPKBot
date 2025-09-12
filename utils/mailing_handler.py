@@ -163,11 +163,19 @@ async def send_new_post_to_admin(
 
         elif many_files:  # пока что так, чтобы ничего не ломалось
             files = files[0]
+            many_files = False
 
-    temp_schedule = await db.save_temp_schedule(group, file_type, files)
+    # Save temp schedule and get its ID before the session is closed
+    try:
+        temp_schedule = await db.save_temp_schedule(group, file_type, files)
+        if not temp_schedule:
+            logger.error(ErrorPhrases.something_went_wrong())
+            return
 
-    if not temp_schedule:
-        logger.error(ErrorPhrases.something_went_wrong)
+        # Store the temp_schedule ID to use later
+        temp_schedule_id = temp_schedule.id
+    except Exception as e:
+        logger.error(f"Error saving temp schedule: {e}")
         return
 
     if many_files:
@@ -185,7 +193,7 @@ async def send_new_post_to_admin(
             await bot.send_message(
                 chat_id=admin,
                 text=group,
-                reply_markup=manage_new_schedule(temp_schedule.id),
+                reply_markup=manage_new_schedule(temp_schedule_id),
             )
 
             return
@@ -195,7 +203,7 @@ async def send_new_post_to_admin(
                 caption=group,
                 chat_id=admin,
                 document=files,
-                reply_markup=manage_new_schedule(temp_schedule.id),
+                reply_markup=manage_new_schedule(temp_schedule_id),
             )
 
         elif file_type == "photo":
@@ -203,7 +211,7 @@ async def send_new_post_to_admin(
                 caption=group,
                 chat_id=admin,
                 photo=files,
-                reply_markup=manage_new_schedule(temp_schedule.id),
+                reply_markup=manage_new_schedule(temp_schedule_id),
             )
 
 

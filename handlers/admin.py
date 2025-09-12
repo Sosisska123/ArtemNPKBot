@@ -14,7 +14,7 @@ from models.schedule import ScheduleType
 from models.temp_prikol import prikol
 
 from utils.date_utils import get_tomorrow_date
-from utils.mailing_handler import send_new_post_to_admin
+from utils.mailing_handler import send_new_post_to_admin, send_files_to_users
 from utils.phrases import AdminPhrases, ErrorPhrases
 from utils.states import LoadScheduleFsm
 
@@ -167,6 +167,35 @@ async def admin_prikol_command(message: Message) -> None:
         await message.answer("✅ Прикол активирован")
     else:
         await message.answer("❌ Прикол деактивирован")
+
+
+@router.message(Command(AdminPhrases.command_mail_everyone), IsAdmin())
+async def admin_mail_everyone_command(
+    message: Message,
+    command: CommandObject,
+    db: Database,
+) -> None:
+    args = command.args.split()
+
+    if len(args) < 2:
+        await message.reply(ErrorPhrases.length_error())
+        return
+
+    (
+        msg,
+        group,
+    ) = (
+        args[0],
+        args[1],
+    )
+
+    ignore_notification = args[2] if len(args) > 2 else False
+
+    await send_files_to_users(
+        message=msg,
+        bot=message.bot,
+        users=await db.get_all_users_from_group(group, ignore_notification),
+    )
 
 
 @router.message(Command(AdminPhrases.command_list_var), IsAdmin())

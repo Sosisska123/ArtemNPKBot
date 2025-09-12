@@ -32,6 +32,15 @@ async def send_files_to_users(
         files (list[str], optional): если пустой, отправляется прост текст. Defaults to None.
     """
 
+    if files is None:
+        for user in users:
+            await bot.send_message(
+                chat_id=user.tg_id,
+                text=message,
+                reply_markup=reply_keyboard,
+            )
+        return
+
     many_files = are_there_many_files(files)
 
     if many_files:

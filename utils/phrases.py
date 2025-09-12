@@ -76,7 +76,7 @@ class AdminPhrases:
 
     @staticmethod
     def comands_list():
-        return f"/{AdminPhrases.command_add_schedule} [нпк/кнн] [file/url] - загрузить расписание\n/{AdminPhrases.command_add_ring_schedule} [нпк/кнн] [file/url] [reg/def] - добавить расписание звонков. reg - только на завтра, def - дефолтное\n\n/{AdminPhrases.command_list_var} - список переменных бота\n/{AdminPhrases.command_set_var} [var] [value] - изменить переменную бота\n/{AdminPhrases.command_clear_jobs} - очистить планировщик\n/{AdminPhrases.command_list} - список команд\n/{AdminPhrases.command_add_user} [id] [group] [username] - добавить пользователя"
+        return f"/{AdminPhrases.command_add_schedule} [нпк/кнн] [file/url] - загрузить расписание\n/{AdminPhrases.command_add_ring_schedule} [нпк/кнн] [file/url] [reg/def] - добавить расписание звонков. reg - только на завтра, def - дефолтное\n\n/{AdminPhrases.command_list_var} - список переменных бота\n/{AdminPhrases.command_set_var} [var] [value] - изменить переменную бота\n/{AdminPhrases.command_clear_jobs} - очистить планировщик\n/{AdminPhrases.command_list} - список команд\n/{AdminPhrases.command_add_user} [id] [group] [username] - добавить пользователя\n/{AdminPhrases.command_prikol} - все следующие расписания будут отправляться за 10 звезд. отключается после повторной отправки"
 
     # ---
 
@@ -99,6 +99,7 @@ class AdminPhrases:
     command_list_var: str = "list_var"
     command_add_ring_schedule: str = "add_ring_schedule"
     command_add_schedule: str = "add_schedule"
+    command_prikol: str = "prikol"
 
 
 class ErrorPhrases:

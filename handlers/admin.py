@@ -11,6 +11,8 @@ from filters.is_admin import IsAdmin
 from keyboards.admin import main_admin_panel
 
 from models.schedule import ScheduleType
+from models.temp_prikol import prikol
+
 from utils.date_utils import get_tomorrow_date
 from utils.mailing_handler import send_new_post_to_admin
 from utils.phrases import AdminPhrases, ErrorPhrases
@@ -155,6 +157,16 @@ async def admin_add_ring_schedule_load_command(
 
 
 # endregion
+
+
+@router.message(Command(AdminPhrases.command_prikol), IsAdmin())
+async def admin_prikol_command(message: Message) -> None:
+    prikol.is_prikol_activated = not prikol.is_prikol_activated
+
+    if prikol.is_prikol_activated:
+        await message.answer("✅ Прикол активирован")
+    else:
+        await message.answer("❌ Прикол деактивирован")
 
 
 @router.message(Command(AdminPhrases.command_list_var), IsAdmin())

@@ -105,13 +105,16 @@ class Database:
             group (str): Group name
             date (str): Schedule date
             url (str): Schedule URL (VK)
-            file_type (str): Used for bot proper file sending. Can be only photo/doc
+            file_type (str): Used for bot proper file sending. One of: 'photo' | 'doc'.
             schedule_type (str, optional): Type of schedule, can be modified or regular. Modified type has more priority. Defaults to ScheduleType.REGULAR.value.
 
         Returns:
             Schedule: The new schedule object
         """
         try:
+            if file_type not in ("photo", "doc"):
+                raise ValueError("file_type must be 'photo' or 'doc'")
+
             schedule = Schedule(
                 group=group,
                 url=url,
@@ -136,7 +139,7 @@ class Database:
             date (datetime.date): date of the schedule
 
         Returns:
-            Optional[Schedule]: The new schedule object
+            Optional[Schedule]: Schedule if found, otherwise None
         """
 
         try:
@@ -148,7 +151,7 @@ class Database:
                     Schedule.schedule_type == ScheduleType.MODIFIED.value,
                 )
             )
-            schedule = result.scalar()
+            schedule = result.scalar_one_or_none()
 
             if not schedule:
                 result = await self.session.execute(
@@ -158,7 +161,7 @@ class Database:
                         Schedule.schedule_type == ScheduleType.REGULAR.value,
                     )
                 )
-                schedule = result.scalar()
+                schedule = result.scalar_one_or_none()
 
             return schedule
         except SQLAlchemyError as e:
@@ -208,8 +211,9 @@ class Database:
                 .where(
                     Schedule.group == group,
                     Schedule.date == date,
-                    Schedule.schedule_type == ScheduleType.REGULAR.value
-                    or ScheduleType.MODIFIED.value,
+                    Schedule.schedule_type.in_(
+                        [ScheduleType.REGULAR.value, ScheduleType.MODIFIED.value]
+                    ),
                 )
                 .values(
                     url=url,

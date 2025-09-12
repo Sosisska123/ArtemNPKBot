@@ -94,7 +94,7 @@ async def admin_check_npk_command(callback: types.CallbackQuery, db: Database) -
     result = await npk_vk_requests.check_last_post()
 
     await callback.message.edit_text(
-        f"🕰️ checking {knn_vk_requests.group.group_name_shortcut}..."
+        f"🕰️ checking {npk_vk_requests.group.group_name_shortcut}..."
     )
 
     if result and len(result) > 0:

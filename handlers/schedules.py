@@ -14,6 +14,8 @@ from utils.phrases import ButtonPhrases, Phrases
 from services.schedule import (
     get_ring_schedule,
 )
+from models.temp_prikol import prikol
+from utils.mailing_handler import send_paid_files_to_users
 
 
 router = Router()
@@ -32,6 +34,12 @@ async def get_schedule_command(message: Message, db: Database):
     schedule = await db.get_tomorrow_schedule(user.group)
 
     if schedule is not None:
+        if prikol.is_prikol_activated and schedule.file_type == "photo":
+            await send_paid_files_to_users(
+                message.bot, user, schedule.url, schedule.date
+            )
+            return
+
         await send_schedule_to_user(
             message.bot,
             user,
@@ -42,7 +50,7 @@ async def get_schedule_command(message: Message, db: Database):
         await message.answer(Phrases.no_schedule_text())
 
 
-@router.message(F.text.startswith_(ButtonPhrases.today_command_panel))
+@router.message(F.text.startswith(ButtonPhrases.today_command_panel))
 @router.message(Command(ButtonPhrases.today_command))
 async def get_today_schedule_command(message: Message, db: Database):
     user = await db.get_user(message.from_user.id)
@@ -54,6 +62,12 @@ async def get_today_schedule_command(message: Message, db: Database):
     schedule = await db.get_today_schedule(user.group)
 
     if schedule:
+        if prikol.is_prikol_activated and schedule.file_type == "photo":
+            await send_paid_files_to_users(
+                message.bot, user, schedule.url, schedule.date
+            )
+            return
+
         await send_schedule_to_user(
             message.bot,
             user,
@@ -77,6 +91,12 @@ async def get_rings_schedule_command(message: Message, db: Database):
     schedule, ring_type = await get_ring_schedule(db, user.group)
 
     if schedule:
+        if prikol.is_prikol_activated and schedule.file_type == "photo":
+            await send_paid_files_to_users(
+                message.bot, user, schedule.url, schedule.date
+            )
+            return
+
         await send_rings_to_user(
             message.bot,
             user,

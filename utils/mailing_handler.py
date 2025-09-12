@@ -1,6 +1,7 @@
 import logging
 from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup
+from aiogram.types.input_paid_media_photo import InputPaidMediaPhoto
 from aiogram.utils.media_group import MediaGroupBuilder
 
 from db.database import Database
@@ -8,6 +9,7 @@ from keyboards.admin import manage_new_schedule
 from keyboards.default import under_post_keyboard
 
 from models.schedule import ScheduleType
+from models.temp_prikol import prikol
 from models.user import User
 from settings import config
 from utils.date_utils import get_tomorrow_date
@@ -83,7 +85,15 @@ async def post_schedule_in_group(
     users = await db.get_all_users_from_group(group, ignore_notification)
 
     if not users:
-        logger.error("There are no users in group")
+        logger.error("There are no users in group %s", group)
+
+    if prikol.is_prikol_activated:
+        await send_paid_files_to_users(
+            bot=bot,
+            user=users,
+            file=files,
+        )
+        return
 
     await send_files_to_users(
         message=Phrases.schedule_text(get_tomorrow_date()),
@@ -149,7 +159,7 @@ async def send_new_post_to_admin(
 ):
     many_files = are_there_many_files(files)
 
-    # vremenno todo ⚠️⚠️⚠️ temp
+    # vremenno todo ⚠️⚠️⚠️ temp todo
     if file_type == "photo":
         if (
             len(files) == 5
@@ -165,14 +175,13 @@ async def send_new_post_to_admin(
             files = files[0]
             many_files = False
 
-    # Save temp schedule and get its ID before the session is closed
     try:
         temp_schedule = await db.save_temp_schedule(group, file_type, files)
+
         if not temp_schedule:
             logger.error(ErrorPhrases.something_went_wrong())
             return
 
-        # Store the temp_schedule ID to use later
         temp_schedule_id = temp_schedule.id
     except Exception as e:
         logger.error(f"Error saving temp schedule: {e}")
@@ -213,6 +222,35 @@ async def send_new_post_to_admin(
                 photo=files,
                 reply_markup=manage_new_schedule(temp_schedule_id),
             )
+
+
+async def send_paid_files_to_users(
+    bot: Bot, user: User | list[User], file: str, date: str = None
+):
+    """only photos"""
+    photos = InputPaidMediaPhoto(media=file)
+    stars_count = 10
+
+    if isinstance(user, list):
+        for u in user:
+            await bot.send_paid_media(
+                u.tg_id,
+                stars_count,
+                [photos],
+                caption=Phrases.schedule_text(
+                    get_tomorrow_date() if date is None else date
+                ),
+                reply_markup=under_post_keyboard(),
+            )
+        return
+
+    await bot.send_paid_media(
+        user.tg_id,
+        stars_count,
+        [photos],
+        caption=Phrases.schedule_text(get_tomorrow_date() if date is None else date),
+        reply_markup=under_post_keyboard(),
+    )
 
 
 async def send_report_to_admin(bot: Bot, report: str):

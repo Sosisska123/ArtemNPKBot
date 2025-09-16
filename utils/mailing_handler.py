@@ -14,6 +14,7 @@ from models.user import User
 from settings import config
 from utils.date_utils import get_tomorrow_date
 from utils.phrases import ErrorPhrases, Phrases
+from utils.scheduler import create_job
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +207,7 @@ async def send_new_post_to_admin(
 
     for admin in config.admins:
         if many_files:
-            await bot.send_media_group(admin, media_group.build())
+            msg = await bot.send_media_group(admin, media_group.build())
 
             await bot.send_message(
                 chat_id=admin,
@@ -214,23 +215,29 @@ async def send_new_post_to_admin(
                 reply_markup=manage_new_schedule(temp_schedule_id),
             )
 
+            create_job(bot, db, temp_schedule_id, msg)
+
             return
 
         if file_type == "doc":
-            await bot.send_document(
+            msg = await bot.send_document(
                 caption=group,
                 chat_id=admin,
                 document=files,
                 reply_markup=manage_new_schedule(temp_schedule_id),
             )
 
+            create_job(bot, db, temp_schedule_id, msg)
+
         elif file_type == "photo":
-            await bot.send_photo(
+            msg = await bot.send_photo(
                 caption=group,
                 chat_id=admin,
                 photo=files,
                 reply_markup=manage_new_schedule(temp_schedule_id),
             )
+
+            create_job(bot, db, temp_schedule_id, msg)
 
 
 async def send_paid_files_to_users(

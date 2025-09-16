@@ -72,6 +72,20 @@ def create_scheduler(*vk_requests: VkRequests, db_dependency: DBDependency):
         coalesce=True,
     )
 
+    scheduler.add_job(
+        func=stop_parsing_jobs,
+        trigger="cron",
+        timezone=datetime.timezone(datetime.timedelta(hours=3)),
+        hour=18,
+        max_instances=1,
+        coalesce=True,
+    )
+
+    # itogo: 15-9 = 6
+    # ( 6 * 60 ) / 5 = 72 requests to vk per day | except saturday: 72 * 6 = 432 per week
+
+    # 60 / 5 = 12
+
     scheduler.start()
     scheduler.print_jobs()
 

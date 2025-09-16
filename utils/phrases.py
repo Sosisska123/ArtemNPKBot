@@ -87,6 +87,7 @@ class AdminPhrases:
     # - - -
 
     approve_schdule_command: str = "✅ Подтвердить"
+    approve_schdule_no_sound_command: str = "✅🔕 Подтвердить без звука"
     reject_schdule_command: str = "❌ Отклонить"
     edit_schdule_command: str = "✏️ Редактировать"
 

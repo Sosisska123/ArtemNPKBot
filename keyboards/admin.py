@@ -33,6 +33,10 @@ def manage_new_schedule(temp_id: int) -> InlineKeyboardMarkup:
         text=AdminPhrases.approve_schdule_command,
         callback_data=f"{AdminPhrases.approve_schdule_command}:{temp_id}",
     )
+    builder.button(
+        text=AdminPhrases.approve_schdule_no_sound_command,
+        callback_data=f"{AdminPhrases.approve_schdule_no_sound_command}:{temp_id}",
+    )
 
     builder.button(
         text=AdminPhrases.reject_schdule_command,

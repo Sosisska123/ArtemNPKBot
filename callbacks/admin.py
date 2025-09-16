@@ -10,6 +10,7 @@ from utils.mailing_handler import post_schedule_in_group, send_new_post_to_admin
 
 from services.schedule import save_schedule
 
+from utils.scheduler import remove_job
 from vk.vk_schedule import npk_vk_requests, knn_vk_requests
 
 
@@ -31,6 +32,7 @@ async def admin_accept_schedule_command(
 
     if not temp_schedule:
         await callback.answer("not temp_schedule error")
+        await callback.message.delete()
         return
 
     await save_schedule(
@@ -42,6 +44,7 @@ async def admin_accept_schedule_command(
     )
 
     await db.delete_temp_schedule(temp_id)
+    remove_job(temp_id)
 
     await post_schedule_in_group(
         bot=callback.bot,
@@ -50,6 +53,35 @@ async def admin_accept_schedule_command(
         file_type=temp_schedule.file_type,
         files=temp_schedule.files_url,
     )
+
+    await callback.message.delete()
+
+
+@router.callback_query(
+    F.data.startswith(AdminPhrases.approve_schdule_no_sound_command), IsAdmin()
+)
+async def admin_accept_schedule_no_sound_command(
+    callback: types.CallbackQuery, db: Database
+) -> None:
+    temp_id = int(callback.data.split(":")[1])
+
+    temp_schedule = await db.get_temp_schedule(temp_id)
+
+    if not temp_schedule:
+        await callback.answer("not temp_schedule error")
+        await callback.message.delete()
+        return
+
+    await save_schedule(
+        db=db,
+        group=temp_schedule.group,
+        date=get_tomorrow_date(),
+        url=temp_schedule.files_url,
+        file_type=temp_schedule.file_type,
+    )
+
+    await db.delete_temp_schedule(temp_id)
+    remove_job(temp_id)
 
     await callback.message.delete()
 
@@ -64,6 +96,7 @@ async def admin_reject_schedule_command(
     temp_id = int(callback.data.split(":")[1])
 
     await db.delete_temp_schedule(temp_id)
+    remove_job(temp_id)
 
     await callback.message.delete()
 
@@ -75,6 +108,7 @@ async def admin_edit_schedule_command(
     temp_id = int(callback.data.split(":")[1])
 
     temp_schedule = await db.get_temp_schedule(temp_id)
+    remove_job(temp_id)
 
     if not temp_schedule:
         await callback.answer("not temp_schedule")

@@ -21,7 +21,7 @@ The bot now supports schedule management with the following features:
 
 3. **Schedule Confirmation**:
    - Before publishing the schedule, it is sent to the administrators for moderation.
-   - If the moderator does not respond within 5 minutes, the schedule is published automatically. (not implemented yet)
+   - If the moderator does not respond within 5 minutes, the schedule is published automatically.
 
 ## Implementing automatic verification
 

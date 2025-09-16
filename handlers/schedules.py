@@ -5,6 +5,8 @@ from aiogram.filters import Command
 
 from db.database import Database
 
+from logger import write_usage_log
+from utils.date_utils import get_today_date
 from utils.mailing_handler import (
     send_rings_to_user,
     send_schedule_to_user,
@@ -30,6 +32,13 @@ async def get_schedule_command(message: Message, db: Database):
     if not user:
         await message.answer(Phrases.first_greeting())
         return
+
+    write_usage_log(
+        message.from_user.username,
+        message.from_user.id,
+        "checked tomorrow lesson",
+        get_today_date(),
+    )
 
     schedule = await db.get_tomorrow_schedule(user.group)
 
@@ -59,6 +68,13 @@ async def get_today_schedule_command(message: Message, db: Database):
         await message.answer(Phrases.first_greeting())
         return
 
+    write_usage_log(
+        message.from_user.username,
+        message.from_user.id,
+        "checked today lesson",
+        get_today_date(),
+    )
+
     schedule = await db.get_today_schedule(user.group)
 
     if schedule:
@@ -87,6 +103,13 @@ async def get_rings_schedule_command(message: Message, db: Database):
     if not user:
         await message.answer(Phrases.first_greeting())
         return
+
+    write_usage_log(
+        message.from_user.username,
+        message.from_user.id,
+        "checked rings schedule",
+        get_today_date(),
+    )
 
     schedule, ring_type = await get_ring_schedule(db, user.group)
 

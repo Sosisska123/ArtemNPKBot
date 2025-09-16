@@ -19,8 +19,7 @@ from utils.db_dependency import DBDependency
 from middlewares.throttling import ThrottlingMiddleware
 
 from vk import vk_schedule as vk_schedule
-from vk.schemas.vk_group import KNNVkGroup, NPKVkGroup
-from vk.vk_requests import VkRequests
+from vk.vk_schedule import npk_vk_requests, knn_vk_requests
 
 from bot_file import bot
 from settings import config
@@ -65,32 +64,9 @@ async def start() -> None:
         ThrottlingMiddleware(session=async_session, ttl=config.ttl_default)
     )
 
-    npk_group = NPKVkGroup(
-        domain=config.vk.group_domains[0],
-        group_name_shortcut="нпк",
-        start_post_offset=1,
-        return_file_type="photo",
+    vk_schedule.create_scheduler(
+        npk_vk_requests, knn_vk_requests, db_dependency=db_dependency
     )
-    knn_group = KNNVkGroup(
-        domain=config.vk.group_domains[1],
-        group_name_shortcut="кнн",
-        start_post_offset=0,
-        return_file_type="doc",
-    )
-
-    vk_requests = VkRequests(
-        group_schema=npk_group,
-        api_vk_token=config.vk.access_token.get_secret_value(),
-        api_ver=config.vk.version,
-    )
-
-    vk_requests2 = VkRequests(
-        group_schema=knn_group,
-        api_vk_token=config.vk.access_token.get_secret_value(),
-        api_ver=config.vk.version,
-    )
-
-    vk_schedule.create_scheduler(vk_requests, vk_requests2, db_dependency=db_dependency)
 
     await bot.delete_webhook(True)
     await dp.start_polling(bot)

@@ -14,7 +14,6 @@ from models.user import User
 from settings import config
 from utils.date_utils import get_tomorrow_date
 from utils.phrases import ErrorPhrases, Phrases
-from utils.scheduler import create_job
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +203,8 @@ async def send_new_post_to_admin(
         )
         for file in files:
             add_media(file)
+
+    from utils.scheduler import create_job
 
     for admin in config.admins:
         if many_files:
